@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tessera Code Map</title>
-<meta name="description" content="TesseraHSM 六個開源 repo 的完整 code map：架構展開圖、模組樹、指令集、信任鏈、資安審查與商業分析。">
+<meta name="description" content="TesseraHSM 六個開源 repo 的完整 code map：架構展開圖、模組樹、指令集、信任鏈與安全設計原文。">
 <style>
 :root{
   --bg:#f7f7f5; --panel:#ffffff; --panel2:#f0efeb; --ink:#1d1d1b; --muted:#5f5e5a; --line:#dcdad3;
@@ -125,7 +125,9 @@ details.tree[open]>summary::before{transform:rotate(90deg)}
 .finding .ev{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px;word-break:break-all}
 .finding p{margin:6px 0}
 .finding .fix{font-size:13.5px}
-.finding .fix::before{content:"建議 → ";font-weight:600;color:var(--ink)}
+.ev{font-family:var(--mono);font-size:12px;color:var(--muted);word-break:break-all}
+.orig h4{margin:14px 0 4px;font-size:14px}
+.orig p{margin:6px 0}
 svg text{font-family:var(--sans)}
 .svgbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;overflow-x:auto}
 .svgbox svg{display:block;min-width:720px;width:100%;height:auto}
@@ -145,7 +147,7 @@ ul.tight li{margin:2px 0}
 <header class="top"><div class="wrap">
   <b>Tessera Code Map</b>
   <nav class="toc">
-    <a href="#map">展開圖</a><a href="#flow">請求路徑</a><a href="#repos">模組樹</a><a href="#cmds">指令集</a><a href="#trust">信任鏈</a><a href="#sec">資安審查</a><a href="#biz">商業分析</a><a href="#next">下一步</a><a href="system-map.html" style="color:var(--accent);font-weight:600">System Map →</a>
+    <a href="#map">展開圖</a><a href="#flow">請求路徑</a><a href="#repos">模組樹</a><a href="#cmds">指令集</a><a href="#trust">信任鏈</a><a href="#sec">安全設計</a><a href="system-map.html" style="color:var(--accent);font-weight:600">System Map →</a>
   </nav>
   <a class="theme-btn" href="../index.html" style="text-decoration:none">首頁</a>
   <button class="theme-btn" id="themeBtn" type="button">主題</button>
@@ -154,7 +156,7 @@ ul.tight li{margin:2px 0}
 <!-- ================= HERO ================= -->
 <div class="wrap hero">
   <div class="tag">快照 2026-10-28</div><div class="tag">TesseraHSM · 6 repos</div><div class="tag">規格 v0.5.0</div>
-  <h1>Tessera：把 Azure Integrated HSM 開源成一個「伺服器內建 HSM」的產業標準</h1>
+  <h1>Tessera Code Map：TesseraHSM 六個 repo 的結構</h1>
   <p class="sub">Tessera 是 Microsoft 主導、Marvell 和 Oracle 共同署名的開源 HSM 專案，透過 OCP 推動。晶片需求規格（CRD）開宗明義把 Tessera 定義為「在 OCP 公開開發的下一代 Azure Integrated HSM」。它延續 Caliptra 的路線：規格、晶片 RTL、韌體、主機 SDK 全部公開，目標是讓每台伺服器、每個 TEE、每台 VM 旁邊都有一顆 FIPS 140-3 Level 3 的 HSM，金鑰不必離開 HSM 邊界也能跨廠商、跨雲移動。</p>
   <div class="kpis">
     <div class="kpi"><div class="v">6</div><div class="l">公開 repo（規格／RTL／韌體＋SDK／驅動／sidecar／unikernel）</div></div>
@@ -164,7 +166,6 @@ ul.tight li{margin:2px 0}
     <div class="kpi"><div class="v">3,640</div><div class="l"><code>#[test]</code>（另有 153 個 <code>#[tokio::test]</code>）＋ 24 個 fuzz target</div></div>
     <div class="kpi"><div class="v">FIPS L3</div><div class="l">認證目標：全晶片邊界</div></div>
   </div>
-  <div class="callout" style="margin-top:22px"><b>一句話結論：</b>目前<b>軟體已經相當成熟，晶片還是半成品</b>。韌體、SDK、模擬器、OpenSSL 整合都能跑；RTL 只有密碼加速器，而且 12 個 IP 裡有 11 個是直接從 Caliptra 搬過來改名的。CRD 裡真正難做的部分還沒公開：key mover、pool manager、PCIe Gen6 IDE/TDISP 前端、GSRAM key vault、防竄改。這代表兩件事：一是商業上的進場窗口還開著；二是現在能拿去做安全宣稱的東西，大部分還停在模擬器。</div>
 </div>
 
 <!-- ================= EXPLODED MAP ================= -->
@@ -179,7 +180,7 @@ ul.tight li{margin:2px 0}
 <!-- ================= REQUEST FLOW ================= -->
 <section id="flow"><div class="wrap">
   <h2><span class="num">02</span>一筆簽章請求怎麼走完全程</h2>
-  <p class="lede">以 nginx 用 TLS 私鑰簽章為例。這條路徑看得出 Tessera 的核心設計：<b>金鑰平常以「遮罩後的 blob」（masked key）放在主機端，每次使用時才在硬體內解開</b>（KEY-OFF-1..11）。圖中走的是 TBOR session；舊版（legacy）session 走 MBOR 協定。</p>
+  <p class="lede">以 nginx 用 TLS 私鑰簽章為例。依 CRD 的 Offloaded 模式（KEY-OFF-1..11），金鑰以「遮罩後的 blob」（masked key）放在主機端，每次使用時在硬體內解開。圖中走的是 TBOR session；舊版（legacy）session 走 MBOR 協定。</p>
   <div class="svgbox">
   <svg viewBox="0 0 1120 470" role="img" aria-label="請求流程圖">
     <defs>
@@ -247,7 +248,6 @@ ul.tight li{margin:2px 0}
       <text x="1000" y="334" fill="var(--muted)" font-size="12">HSM 內部</text>
       <text x="10" y="410" fill="var(--muted)" font-size="12">替換傳輸層：ddi_nix（Linux 實機）· ddi_win（Windows）· ddi_emu（同行程跑韌體）· ddi_mock / mbor sim（模擬器）· ddi_sock（vsock → sidecar）</text>
       <text x="10" y="432" fill="var(--muted)" font-size="12">替換平台層：fw/plat/uno（Cortex-M 實機，no_std）· fw/plat/std（主機原生 + tokio，模擬器／sidecar 都用這層）</text>
-      <text x="10" y="454" fill="var(--sev-h)" font-size="12">⚠ sidecar 路徑底下跑的是 std PAL，裝置秘密是寫死在程式裡的，見資安審查 H-1</text>
     </g>
   </svg>
   </div>
@@ -322,175 +322,63 @@ ul.tight li{margin:2px 0}
         <li><b>DARC</b>：<i>跨廠商</i>只搬<b>一把</b>金鑰，不擴大 domain。目前只支援 EC 私鑰，PQC/hybrid 的 HPKE profile 還是 Open Item。</li>
         <li><b>SKR / Key Import</b>：相容舊流程，需要 <code>CKA_EXTRACTABLE</code>。規格把 Key Export 列為反模式，保留 SKR 只是為了向後相容。</li>
       </ul>
-      <div class="callout" style="margin:10px 0 0"><b>商業意義：</b>DARC 是整套規格裡最有「標準價值」的部分。如果 Thales、Entrust、Utimaco 或各家雲端 HSM 都實作 DARC，企業就能向監管單位（DORA、OSFI、PCI-HSM）證明「隨時可以退出某家雲」，而且金鑰全程留在 HSM 邊界內。</div>
     </div>
   </div>
 </div></section>
 
 <!-- ================= SECURITY ================= -->
 <section id="sec"><div class="wrap">
-  <h2><span class="num">06</span>資安專家審查</h2>
-  <p class="lede">這是讀程式碼加規格後的<b>靜態審查</b>，沒有跑過、也沒做 exploit。每一條都附上證據位置（commit 已固定），等級是依照「如果照目前 repo 部署」來評。</p>
-
-  <div class="finding">
-    <div class="fh"><span class="sev h">H-1</span><b>std PAL 把裝置根秘密寫死在原始碼裡，而 SEV-SNP sidecar 跑的就是這個 PAL</b></div>
-    <div class="ev"><a href="https://github.com/TesseraHSM/tessera-sw/blob/32812128eab66c6701a2d9f33dbed0022ef8f30d/fw/plat/std/pal/src/seed.rs#L27">tessera-sw/fw/plat/std/pal/src/seed.rs:27</a>（STD_MFGR_SEED_ROW0、STD_OWNER_SEED_ROW0、STD_FW_SEED48、STD_UDS）· CRD <b>CRYPT-3</b>、<b>FW-SEC-4</b>（禁止量產韌體含靜態金鑰或原始碼內秘密）· <a href="https://github.com/TesseraHSM/tessera-sw/blob/32812128eab66c6701a2d9f33dbed0022ef8f30d/examples/sock/ddi_sock_server/src/main.rs#L26">ddi_sock_server/src/main.rs:26</a> 用的是 <code>StdHsm</code></div>
-    <p>sidecar-scripts 提供了 <code>mshv-unikraft-snp</code> 這個 AMD SEV-SNP 版本，看起來像是「還沒有實體晶片前，先用機密 VM 當 HSM」。可是它裡面的 HSM 核心用的是 std PAL，而 std PAL 的裝置根秘密（UDS、FW seed、BKS1、BKS2）全都是 repo 裡的公開常數。註解寫明這些值取自「先前的參考韌體」，目的是讓 blob 和實機<i>位元相容</i>。</p><p>Tessera 的設計是讓分區金鑰同時依賴<b>裝置內的秘密</b>和<b>外部提供的秘密</b>，例如 PartInit 時由主機加密送入的 <code>mach_seed</code>，以及 Partition Owner 的 BKS3。裝置端秘密公開之後，這道雙重保護就只剩一半：掌握 <code>mach_seed</code> 的人可以在 HSM 外重算 UMS，以及由它推導的分區身分金鑰（PTA）；掌握 BKS3 的人也能在外部推導 Backup Key。換句話說，<b>「金鑰只存在 HSM 邊界內」這個承諾在 sidecar 上不成立</b>。SNP 擋得住 host 讀記憶體，擋不住「秘密本來就是公開的」。</p>
-    <p class="fix">在 std PAL 加一道 build-time 防線：production 設定下禁止使用寫死的種子，改成從 SNP 的 <code>MSG_KEY_REQ</code>（VCEK 推導的 sealing key）或 vTPM 取得 UDS。另外，要確認「實機 BKS1 和模擬器相同」只發生在開發用 SVN，正式 SVN 一定要有獨立的種子列。</p>
-  </div>
-
-  <div class="finding">
-    <div class="fh"><span class="sev h">H-2</span><b>vsock DDI 傳輸完全沒有認證；如果 sidecar 被當成產品用，等於開放的 HSM</b></div>
-    <div class="ev"><a href="https://github.com/TesseraHSM/tessera-sw/blob/32812128eab66c6701a2d9f33dbed0022ef8f30d/examples/sock/ddi_sock_server/src/main.rs#L9">ddi_sock_server/src/main.rs:9</a> "This unauthenticated test transport is for trusted, isolated environments"</div>
-    <p>作者在註解裡寫得很清楚，這是測試用的傳輸層。但 sidecar repo 的 SNP 建置流程和產品化包裝（多種 variant、MSHV 平台、SNP 隔離）會讓人以為它是可以部署的東西。任何能連到 vsock CID:1234 的行程都能下 DDI 指令；唯一的門檻只剩 session PSK（見 M-1）。</p>
-    <p class="fix">sidecar 的 README 和建置腳本要明確標示 <i>non-production</i>。如果要產品化，至少要做到：SPDM-over-vsock 或 attested TLS（以 SNP report 作為身分），並把 SNP measurement 綁進 AOAC/FMC Alias 鏈。</p>
-  </div>
-
-  <div class="finding">
-    <div class="fh"><span class="sev m">M-1</span><b>預設 PSK 是公開的，第一個連上的人就能拿走分區（TOFU 搶占）</b></div>
-    <div class="ev">Command Spec §Default-PSK gate · <a href="https://github.com/TesseraHSM/tessera-sw/blob/32812128eab66c6701a2d9f33dbed0022ef8f30d/fw/core/lib/src/ddi/tbor/mod.rs#L862">fw/core/lib/src/ddi/tbor/mod.rs:862</a> <code>allowed_with_default_psk</code></div>
-    <p>預設 PSK 字串（<code>TESSERAHSM-DEFAULT-CO-PSK-v1----</code>）寫在規格裡。gate 的設計本身是對的：<i>safe-by-default</i>，新加的 opcode 會自動被擋，只開放 <code>PskChange</code> 和 <code>SessionClose</code>，而且有單元測試鎖住；新 PSK 也是用 session 金鑰加密傳送，每個 session 只能換一次。問題在於 <b>bootstrap 是「先到先贏」</b>：誰先送出 <code>PskChange</code>，誰就擁有 CO 角色。如果在合法 owner 輪替 PSK 之前，有其他能存取這個 VF 的行程先動手，就能搶下分區。</p>
-    <p class="fix">把第一次 <code>PskChange</code> 綁到 POTA 簽章（或綁到 TDISP 已鎖定的 TDI），讓 PSK 輪替本身也要有授權。或者至少在 PartInfo 裡回報「PSK 已被輪替」的時間點和計數，讓 owner 能偵測自己是不是晚了一步。</p>
-  </div>
-
-  <div class="finding">
-    <div class="fh"><span class="sev m">M-2</span><b>RSA 引擎：CRT（效能路徑）和 exponent blinding 不能同時開，預設兩者都關；私鑰由 CPU 經匯流排寫入</b></div>
-    <div class="ev"><a href="https://github.com/TesseraHSM/tessera-rtl/blob/fc5e739d481e66f58c381801fa6410b79baad1ec/src/rsa_4k_3k_2k/rtl/tessera_rsa_ctrl.sv#L265">tessera_rsa_ctrl.sv:265</a> · <a href="https://github.com/TesseraHSM/tessera-rtl/blob/fc5e739d481e66f58c381801fa6410b79baad1ec/src/rsa_4k_3k_2k/rtl/tessera_rsa_params_pkg.sv#L79">tessera_rsa_params_pkg.sv:79</a>（CRT 與 BLIND_BITS 預設皆為 0）· <a href="https://github.com/TesseraHSM/tessera-rtl/blob/fc5e739d481e66f58c381801fa6410b79baad1ec/src/rsa_4k_3k_2k/rtl/tessera_rsa_top.sv#L22">tessera_rsa_top.sv:22</a> "No Key Vault interface… Private exponents arrive over the bus"</div>
-    <p>RSA 是 12 個 IP 裡<b>唯一沒有 revinfo.yml 來源紀錄</b>的區塊。檔頭註解自稱「Caliptra RSA engine」，但 CI 的 round-trip 沒有涵蓋它，所以無法證明它和任何經過審查的 upstream 版本一致。好消息是它有做：固定長度的 ladder、常數時間查表、強制的 Bellcore 驗證（防 CRT 故障注入）。壞消息有兩個：(1) 要達到 PERF-1 規格的 100k ops/s 就必須開 CRT，而 CRT 和 blinding 在 RTL 裡是互斥的；(2) 沒有 Key Vault 介面，私鑰由 CPU 寫進 <code>RSA_D</code>。這和 CRD 的 KEY-MGT-6（SHOULD：韌體不應看到明文金鑰），以及 Theory of Operation 裡「一般 uC 流程不得需要明文私鑰」的要求不一致。</p>
-    <p class="fix">讓 key mover 直接把 RSA 私鑰送進引擎（不經過 CPU），並擴大 DP/DQ 的寬度以支援 CRT blinding（dp + k·(p−1)）。在 tape-out 前要安排獨立的 SCA/FI 實驗室評估，例如 TVLA 和雷射故障注入。</p>
-  </div>
-
-  <div class="finding">
-    <div class="fh"><span class="sev m">M-3</span><b>晶片真正的安全邊界還沒開源</b></div>
-    <div class="ev">tessera-rtl/src/ 只有 12 個加速器；CRD 要求的 key mover、pool manager、host memory hasher、GSRAM KV、PCIe IDE/TDISP、tamper 都還沒出現</div>
-    <p>加速器之所以安全，是因為「金鑰怎麼進來、誰能讀」，而這部分全在還沒公開的 SoC 整合層。換句話說，<b>現在沒辦法驗證 Tessera 最核心的承諾</b>：「解遮罩只在硬體狀態機內完成，uC 只能單向寫入」。另外，韌體 repo 裡唯一的實機平台是 Uno（Cortex-M，<code>fw/plat/uno</code>）；它和 CRD 規格中的 4×M7/E6 + PCIe Gen6 架構是不是同一顆晶片，repo 裡沒有說明。就連加速器本身也有缺口：ECC 引擎只看得到 P-384，CRD 要求的 P-256、P-256K、P-521 都還沒有硬體實作。</p>
-    <p class="fix">在 OCP 推動「SoC integration RTL + 安全架構文件」的公開時程；在那之前，任何商業材料都應該把 Tessera 定位成「參考架構」，不要說成「已驗證的晶片」。</p>
-  </div>
-
-  <div class="finding">
-    <div class="fh"><span class="sev m">M-4</span><b>Linux 驅動：device reset 的 ioctl 沒有檢查權限，程式裡還留著 debug 記錄</b></div>
-    <div class="ev"><a href="https://github.com/TesseraHSM/tessera-linux-driver/blob/a43d3135d92d7780bdb97334de25044bdd07c5d3/tsra_hsm_dev.c#L2146">tsra_hsm_dev.c:2146</a> <code>TSRA_IOCTL_RESET_DEVICE</code> · <a href="https://github.com/TesseraHSM/tessera-linux-driver/blob/a43d3135d92d7780bdb97334de25044bdd07c5d3/tsra_hsm_dev.c#L2046">tsra_hsm_dev.c:2046</a> 起共 4 處 "[REMOVE-ME]"</div>
-    <p>整個驅動裡沒有任何 <code>capable()</code> 檢查，所以能開 device node 的行程都能 reset 裝置。在 VM 裡面，這代表其他 user 可以讓 HSM 的服務中斷（DoS）；在 PF 端影響會更大。驅動有 23 處 <code>copy_from_user</code>，這次沒有逐一審查；<code>FOLL_PIN</code> 的使用者頁 DMA 路徑（tsra_dma_io.c）也值得找 kernel 專家再看一次。</p>
-    <p class="fix">reset 和管理類 ioctl 要求 <code>CAP_SYS_ADMIN</code>，並把 udev 規則加進 repo；拿掉 [REMOVE-ME] 記錄；送 upstream 前跑 syzkaller。</p>
-  </div>
-
-  <div class="finding">
-    <div class="fh"><span class="sev l">L-1</span><b>規格和程式碼不同步，舊版 MBOR 協定仍然啟用</b></div>
-    <p>韌體已經實作並分派 ML-DSA 和 ML-KEM 的 6 個指令（0x26–0x2B），但 Command Spec v0.4 的 opcode 表只寫到 0x25，而 <code>docs/tbor-ddi/commands/</code> 裡這 6 份文件仍寫著「Not implemented yet」。三份資料互相矛盾。MBOR 和 TBOR 兩套解析器並存，代表兩倍的解析攻擊面；24 個 fuzz target 都放在 <code>fuzz/fuzz_targets/ddi/tbor/</code> 底下，MBOR 解析器有沒有被 fuzz 覆蓋，還需要再確認。</p>
-    <p class="fix">用 <code>docs/tbor-ddi/commands/*.md</code> 自動產生規格的 opcode 表；訂出 MBOR 的淘汰時程，並在 PartInfo 回報目前啟用了哪些協定。</p>
-  </div>
-
-  <div class="finding">
-    <div class="fh"><span class="sev l">L-2</span><b>OpenSSL Provider 還沒有 PQC，也沒有 PKCS#11</b></div>
-    <p>Provider 目前只支援 RSA、EC、ECDH、AES-GCM/XTS、SHA-2、HKDF。可是韌體已經有 ML-DSA 和 ML-KEM，而 OpenSSL 3.5 原生就支援 ML-KEM/ML-DSA。另外整個專案沒有 PKCS#11 模組（native API 文件只列出各演算法對應的 PKCS#11 mechanism），而 PKCS#11 是傳統 HSM 生態（Java、資料庫 TDE、CA 軟體）的共通語言。</p>
-    <p class="fix">補上 provider 的 PQC keymgmt、signature、kem；PKCS#11 是一個明確的商業缺口（見 07）。</p>
-  </div>
-
-  <h3>做得好的地方（之後寫產品材料可以引用）</h3>
-  <div class="grid3">
-    <div class="card"><span class="sev ok">OK</span> <b>Rust 預設禁止 <code>unsafe</code></b><p style="margin:6px 0 0;font-size:13.5px;color:var(--muted)">workspace 層級設定 <code>unsafe_code = "deny"</code>，需要 unsafe 的模組必須個別開啟。韌體核心可編成 no_std 的 async 函式庫，實機平台用 Embassy 執行。</p></div>
-    <div class="card"><span class="sev ok">OK</span> <b>Default-PSK gate 是白名單制</b><p style="margin:6px 0 0;font-size:13.5px;color:var(--muted)">之後新增的 opcode 會自動被擋，有測試鎖住；PSK 輪替本身也以 session 金鑰加密，每個 session 只能換一次。</p></div>
-    <div class="card"><span class="sev ok">OK</span> <b>RTL 來源可追溯</b><p style="margin:6px 0 0;font-size:13.5px;color:var(--muted)">CI 會把每個 vendored 區塊和 Caliptra upstream 的指定 commit 做 round-trip diff，證明改動「只有改名」。這是很少見的供應鏈紀律。</p></div>
-    <div class="card"><span class="sev ok">OK</span> <b>回應帶 FIPS_APPROVED 旗標</b><p style="margin:6px 0 0;font-size:13.5px;color:var(--muted)">每個回應都標示這次運算是否只用了 approved 演算法，對 FIPS 稽核很友善。</p></div>
-    <div class="card"><span class="sev ok">OK</span> <b>Fuzz 加上一致性測試</b><p style="margin:6px 0 0;font-size:13.5px;color:var(--muted)">24 個 TBOR fuzz target、約 3,800 個 Rust 測試；C++ 一致性測試可以切換 mock、emu 或實機驅動後端。</p></div>
-    <div class="card"><span class="sev ok">OK</span> <b>交易式 undo log</b><p style="margin:6px 0 0;font-size:13.5px;color:var(--muted)"><code>fw/core/undo</code> 讓多步驟的狀態變更在中途失敗時可以回滾。</p></div>
-  </div>
+  <h2><span class="num">06</span>安全設計（規格與原始碼原文）</h2>
+  <p class="lede">本節<b>全部直接引用</b> TesseraHSM 的規格與原始碼，未加入任何評論或判斷。英文為原文，每段都附上原始檔案的行號連結。</p>
+  <div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">Transfer Masking Key Protocol — Security Analysis</h3><div class="ev" style="margin:0 0 8px"><a href="https://github.com/TesseraHSM/tessera-specs/blob/bcdb753953dbb0067a7764130e47b0d156adf6fb/Tessera%20-%20Transfer%20Masking%20Key%20Protocol.md?plain=1#L247" target="_blank" rel="noopener">tessera-specs/Tessera - Transfer Masking Key Protocol.md:247</a></div><p style="color:var(--muted);font-size:13px;margin:0 0 6px">規格自己列出的 11 類威脅與對應控制。</p><div class="orig" lang="en"><div class="tscroll"><table><thead><tr><th>Threat</th><th>Controls</th></tr></thead><tbody><tr><td><b>Endpoint impersonation and certificate substitution</b></td><td>Three-level validation, key correlation, attestation, transcript certificate digests</td></tr><tr><td><b>Unknown-key-share and endpoint or role confusion</b></td><td>Authenticated HPKE, bidirectional confirmation, role and purpose binding</td></tr><tr><td><b>Replay and stale state</b></td><td>Nonces, counters, evidence freshness, token-ID tracking, transcript binding</td></tr><tr><td><b>Downgrade and PQC stripping</b></td><td>Authenticated negotiation, policy-bound PQC or hybrid PQC profile, suite in transcript</td></tr><tr><td><b>Cross-owner and cross-partition disclosure</b></td><td>AOAC, POTA, Partition Identity Certificate, configuration and policy comparison</td></tr><tr><td><b>Interface reassignment and confused deputy</b></td><td>Parent-device binding, interface identity, KOTA, request and audience binding</td></tr><tr><td><b>Attribute stripping</b></td><td>Authenticated object, destination preservation, atomic validation</td></tr><tr><td><b>Token theft and unauthorized signer</b></td><td>COSE, accepted-signer attributes, confirmation claim when present, POTA correlation</td></tr><tr><td><b>Stale audit or substituted attestation</b></td><td>Independent validation, digest correlation, freshness and nonce checks</td></tr><tr><td><b>Firmware or Masking Key rollback</b></td><td>Minimum SVN, measured-state policy, version lineage, anti-rollback state</td></tr><tr><td><b>Secret-erasure failure and domain expansion</b></td><td>Cleanup state, quarantine, explicit purpose, ring-membership audit</td></tr></tbody></table></div></div></div>
+  <div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">Command Specification — Security Considerations</h3><div class="ev" style="margin:0 0 8px"><a href="https://github.com/TesseraHSM/tessera-specs/blob/bcdb753953dbb0067a7764130e47b0d156adf6fb/Tessera%20-%20Command%20Specification.md?plain=1#L692" target="_blank" rel="noopener">tessera-specs/Tessera - Command Specification.md:692</a></div><div class="orig" lang="en"><p>The following security considerations apply to implementations of this protocol.</p>
+<h4>FIPS_APPROVED Flag</h4>
+<p>The <code>FIPS_APPROVED</code> flag in the response header (bit 0 of the Flags byte) indicates whether the device used FIPS 140-2/140-3 approved cryptographic algorithms to process the request. This flag is <b>informational only</b>. Host software that requires FIPS compliance MUST independently verify the device&#x27;s FIPS certification status through out-of-band means (e.g., hardware attestation, certificate chain validation) and MUST NOT rely solely on this flag for compliance decisions.</p>
+<h4>Sealed Key Handling</h4>
+<p>The <code>sealed_key</code> TOC entry type carries opaque, device-sealed key material. Intermediaries and host software MUST treat sealed key blobs as opaque byte sequences and MUST NOT attempt to parse, modify, or interpret their contents. Sealed keys SHOULD be stored in secure, access-controlled memory when held by the host.</p>
+<h4>Input Validation</h4>
+<p>Implementations MUST perform thorough bounds-checking on all incoming messages:</p>
+<ul class="tight">
+<li>Verify that <code>Offset + Length</code> for every Offset/Length TOC entry falls within the actual variable-length data section.</li>
+<li>Verify that the total message size is consistent with the TOC Count and the referenced data regions.</li>
+<li>Reject messages that fail validation with status code <code>0x00000003</code> (Malformed Request) and do not process them further.</li>
+</ul>
+<p>Failure to validate inputs can lead to buffer over-reads or other memory safety vulnerabilities, which are especially critical in device driver contexts.</p>
+<h4>Transport Security</h4>
+<p>This protocol does not define encryption or authentication at the wire level. If the transport channel is not physically secured (e.g., communication over a shared bus), implementations SHOULD layer appropriate transport security (encryption, message authentication) beneath this protocol.</p></div></div>
+  <div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">Command Specification — Default-PSK gate</h3><div class="ev" style="margin:0 0 8px"><a href="https://github.com/TesseraHSM/tessera-specs/blob/bcdb753953dbb0067a7764130e47b0d156adf6fb/Tessera%20-%20Command%20Specification.md?plain=1#L940" target="_blank" rel="noopener">tessera-specs/Tessera - Command Specification.md:940</a></div><div class="orig" lang="en"><p>Partitions ship with publicly-known compiled-in default PSKs (<code>TESSERAHSM-DEFAULT-CO-PSK-v1----</code> / <code>TESSERAHSM-DEFAULT-CU-PSK-v1----</code>) so they are usable at bring-up. A session opened against an un-rotated default PSK has no authentication value and the dispatcher refuses to run any production work on it.</p>
+<p>While the calling session&#x27;s role still has its <b>default PSK</b>, the only in-session commands permitted are:</p><div class="tscroll" style="margin:6px 0"><table><thead><tr><th>Opcode</th><th>Command</th><th>Why it&#x27;s allowed</th></tr></thead><tbody><tr><td><code>0x05</code></td><td><code>SessionClose</code></td><td>Tear-down has no security impact</td></tr><tr><td><code>0x06</code></td><td><code>PskChange</code></td><td>The rotation itself</td></tr></tbody></table></div><p>Any other in-session opcode returns <code>DefaultPskMustRotate</code> (<code>0x087000E6</code>).  The gate is <b>per role</b>: rotating the CO PSK unlocks CO sessions but does not affect CU; rotating the CU PSK is a separate operation.  Out-of-session opcodes (<code>ApiRev</code>, <code>SessionOpenInit</code>, <code>SessionOpenFinish</code>, <code>PartInfo</code>, <code>GetCertChainInfo</code>, <code>GetCertificate</code>) are never gated so a client can always open the bootstrap session.</p>
+<p><b>Bootstrap sequence (mandatory on first provisioning):</b></p>
+<ul class="tight">
+<li>Open a session for the role under the default PSK.</li>
+<li>Issue <code>PskChange</code> as the first in-session command.</li>
+<li>(Optional) <code>SessionClose</code>; subsequent sessions are unrestricted.</li>
+</ul>
+<p>The gate is <b>safe-by-default</b> in code: future opcodes added to the dispatcher are gated unless explicitly placed on the <code>allowed_with_default_psk</code> allow-list in <code>fw/core/lib/src/ddi/tbor/mod.rs</code>.</p></div></div>
+  <div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">DARC Specification — Replay and Mutual-Authentication Guarantees</h3><div class="ev" style="margin:0 0 8px"><a href="https://github.com/TesseraHSM/tessera-specs/blob/bcdb753953dbb0067a7764130e47b0d156adf6fb/Tessera%20-%20DARC%20Specification.md?plain=1#L391" target="_blank" rel="noopener">tessera-specs/Tessera - DARC Specification.md:391</a></div><div class="orig" lang="en"><p>The HPKE-Auth seal binds the transfer to both endpoints&#x27; KEX identities; an attacker cannot substitute a receiver (it lacks <code>RcvrPriv</code>) or forge the sender (it lacks the POTA-endorsed sender key). Certificate-chain validation against the policy-pinned DATA/POTA anchors prevents a mis-owned or unauthenticated device from participating. Because the TMK and KEX keys are fresh per campaign, a captured <code>sealed_tmk</code> or <code>wrapped_key</code> cannot be replayed into a different campaign.</p></div></div>
+  <div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">DARC Specification — Masked-Key Handling and Zeroization</h3><div class="ev" style="margin:0 0 8px"><a href="https://github.com/TesseraHSM/tessera-specs/blob/bcdb753953dbb0067a7764130e47b0d156adf6fb/Tessera%20-%20DARC%20Specification.md?plain=1#L358" target="_blank" rel="noopener">tessera-specs/Tessera - DARC Specification.md:358</a></div><div class="orig" lang="en"><p>Every DARC handler recovers secrets into transient buffers and zeroizes them on <b>every</b> exit path, including error paths: KEX private keys, the TMK, the big-endian private scalar <code>d</code>, and the <code>COSE_Key</code> plaintext. Masked blobs decrypted in place during unmasking are scrubbed after use. Only non-secret values (public keys, <code>kid</code> labels) survive a handler. Secret scrubbing uses a volatile wipe so the store cannot be elided by the optimizer.</p></div></div>
+  <div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">Chip Requirements — Physical Security</h3><div class="ev" style="margin:0 0 8px"><a href="https://github.com/TesseraHSM/tessera-specs/blob/bcdb753953dbb0067a7764130e47b0d156adf6fb/Tessera%20-%20Chip%20Requirements%20Specification.md?plain=1#L419" target="_blank" rel="noopener">tessera-specs/Tessera - Chip Requirements Specification.md:419</a></div><div class="orig" lang="en"><p>Tessera SHALL be certified to FIPS 140-3 level 3 at the full chip boundary.</p>
+<p>Tessera’s cryptographic acceleration blocks, memories, and buffers storing keys in plain text SHALL have the following tamper defense mechanisms:</p>
+<ul class="tight">
+<li>Tamper Shield</li>
+<li>Temperature Sensor</li>
+<li>Multi Register and Multi bit Registers with parity protection on memory protection configuration.</li>
+<li>Security sensitive registers shall be multi-bit. Example: a single bit should not represent debug enabled.</li>
+<li>Frequency and Voltage monitors</li>
+</ul><p style="color:var(--muted);font-size:13px">完整的安全與信任需求（PCIe IDE/TDISP、Root of Trust、Firmware Security、Chassis Intrusion）請見 <a href="asic.html#reqs">ASIC 分析頁的需求清單</a>，章節選「安全與信任」。</p></div></div>
+  <h3>原始碼中作者自己寫的安全註記</h3>
+  <div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">tessera-sw — ddi_sock_server 檔頭註解</h3><div class="ev" style="margin:0 0 8px"><a href="https://github.com/TesseraHSM/tessera-sw/blob/32812128eab66c6701a2d9f33dbed0022ef8f30d/examples/sock/ddi_sock_server/src/main.rs?plain=1#L1" target="_blank" rel="noopener">tessera-sw/examples/sock/ddi_sock_server/src/main.rs:1</a></div><div class="orig" lang="en"><p>Linux VSOCK server backed by an in-process HSM emulator. Run <code>cargo run -p ddi_sock_server</code> in a VSOCK-capable Linux guest. The server listens on port 1234 and uses partition 10. Clients connect to <code>vsock://CID:1234</code>, where CID is this guest&#x27;s VSOCK context ID. This unauthenticated test transport is for trusted, isolated environments; it is not a production service. Emulator state is lost when the server exits. Requests with OOB pointers or lengths are rejected: this wire format cannot transfer descriptor arrays or the buffers they reference.</p></div></div>
+  <div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">tessera-sw — PskChange 的 Replay model</h3><div class="ev" style="margin:0 0 8px"><a href="https://github.com/TesseraHSM/tessera-sw/blob/32812128eab66c6701a2d9f33dbed0022ef8f30d/fw/core/lib/src/ddi/tbor/psk_change.rs?plain=1#L12" target="_blank" rel="noopener">tessera-sw/fw/core/lib/src/ddi/tbor/psk_change.rs:12</a></div><div class="orig" lang="en"><p>Cross-session replay is structurally impossible: <code>param_key</code> is HPKE-derived per session, so an envelope captured from session A cannot decrypt under session B&#x27;s key (the AEAD tag fails before any plaintext is produced).</p>
+<p>Intra-session replay is bounded to <b>one successful change per session</b>: the handler marks the session as &quot;change used&quot; on success; a second <code>PskChange</code> on the same session is rejected with <code>InvalidPermissions</code>.</p></div></div>
 </div></section>
 
-<!-- ================= BUSINESS ================= -->
-<section id="biz"><div class="wrap">
-  <h2><span class="num">07</span>用做生意的角度看 Tessera</h2>
-  <p class="lede">本節的動機與市場影響是<b>分析判斷</b>，不是官方說法。先講結論：Tessera 是 hyperscaler 把「HSM」從一個<b>設備生意</b>，改寫成一個<b>晶片標準和生態系生意</b>。Caliptra 已經讓 Root of Trust 變成大家共用的公共財，Tessera 想對 HSM 做同一件事。</p>
 
-  <div class="grid2">
-    <div class="card">
-      <h3 style="margin-top:0">Microsoft 為什麼要開源？</h3>
-      <ul class="tight">
-        <li><b>壓低自家成本：</b>CRD 把 Tessera 定位為下一代 Azure Integrated HSM。開源加上多家供應商，可以讓晶片價格競爭，也避免被單一供應商綁住。</li>
-        <li><b>讓自己的做法變成標準：</b>透過 OCP 定義 DARC 和 Masking Key Transfer，讓 Azure 的金鑰模型成為業界預設，其他雲和 HSM 廠商就得跟著相容。</li>
-        <li><b>搶監管紅利：</b>DORA、主權雲、PQC 遷移時程都在逼企業證明「可以退出、金鑰從不外露」。開放標準是最有說服力的稽核證據。</li>
-        <li><b>Caliptra 的成功模式：</b>參與者（Marvell、Oracle）願意一起署名，就代表供應鏈已經開始對齊。</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3 style="margin-top:0">誰的生意會被影響？</h3>
-      <div class="tscroll" style="border:0"><table>
-        <tr><th>角色</th><th>影響</th></tr>
-        <tr><td>傳統網路型 HSM（Thales Luna、Entrust nShield、Utimaco）</td><td><span class="sev m">壓力</span> 中低階的「延遲敏感」工作負載會被伺服器內建 HSM 吃掉；但它們可以變成 DARC 的「來源 HSM」，轉型做金鑰的根</td></tr>
-        <tr><td>雲端 HSM（CloudHSM、Cloud HSM、Managed HSM）</td><td><span class="sev l">兩面</span> 企業有了跨雲搬金鑰的標準，雲的鎖定效果會變弱</td></tr>
-        <tr><td>PCIe HSM 卡和晶片（Marvell LiquidSecurity 等）</td><td><span class="sev ok">機會</span> 直接是 Tessera 晶片的候選供應商（Marvell 已經在作者名單上）</td></tr>
-        <tr><td>安全 IP 廠商（RoT、PUF、TRNG、PQC IP）</td><td><span class="sev ok">機會</span> 規格把 Caliptra 2.2 寫死成 RoT，但 entropy、OTP、tamper、key storage 都還可以替換</td></tr>
-        <tr><td>FIPS 和 CC 實驗室、SCA 實驗室</td><td><span class="sev ok">機會</span> 每一家實作的廠商都要各自認證</td></tr>
-      </table></div>
-    </div>
-  </div>
-
-  <h3>價值鏈：錢會流向哪裡</h3>
-  <div class="tscroll"><table>
-    <thead><tr><th>層級</th><th>開源後還剩什麼可以賣</th><th>對應的 repo</th><th>進入門檻</th><th>現在的成熟度</th></tr></thead>
-    <tbody>
-      <tr><td>規格和標準</td><td>主導權、互通認證（「Tessera-conformant」標章）</td><td>tessera-specs</td><td>高（需要 OCP 席位）</td><td>v0.5 草案</td></tr>
-      <tr><td>晶片 IP</td><td>SoC 整合、PCIe Gen6 IDE/TDISP、key mover、防竄改、PUF/TRNG、經過 SCA 加固的版本</td><td>tessera-rtl</td><td>很高</td><td><span class="sev h">早期</span> 只有加速器</td></tr>
-      <tr><td>晶片和卡</td><td>ASIC 量產、OEM 板卡、FIPS L3 證書</td><td>—</td><td>很高（FIPS L3 認證週期以年計）</td><td>還沒出貨</td></tr>
-      <tr><td>韌體</td><td>新晶片的 PAL 移植、長期維護和 CVE 回應</td><td>tessera-sw/fw</td><td>中</td><td><span class="sev ok">成熟</span></td></tr>
-      <tr><td>主機整合</td><td><b>PKCS#11</b>、KMIP、JCE、Windows CNG/KSP、Kubernetes CSI、Vault 或 KMS 外掛</td><td>tessera-sw/plugins</td><td>低到中</td><td><span class="sev m">缺口</span> 只有 OpenSSL</td></tr>
-      <tr><td>服務</td><td>DARC 金鑰遷移顧問、PQC 遷移、監管合規（DORA/PCI）</td><td>—</td><td>低</td><td>還沒人做</td></tr>
-      <tr><td>過渡期產品</td><td>機密 VM 裡的軟體 HSM（sidecar）</td><td>sidecar-scripts + unikraft</td><td>低</td><td><span class="sev h">不能當產品</span> 見 H-1、H-2</td></tr>
-    </tbody>
-  </table></div>
-
-  <h3>SWOT（從潛在參與者的角度）</h3>
-  <div class="swot">
-    <div class="card"><h4 style="color:var(--sev-ok)">S 優勢</h4><ul><li>hyperscaler 背書：CRD 定位為下一代 Azure Integrated HSM</li><li>軟體堆疊完整，有模擬器，上手成本低</li><li>全部開源（MIT、Apache-2.0、GPL-2.0），可以審查</li><li>一開始就把 PQC 納入規格（ML-DSA、ML-KEM、hybrid）</li></ul></div>
-    <div class="card"><h4 style="color:var(--sev-h)">W 弱點</h4><ul><li>晶片安全邊界還沒開源，現在沒辦法驗證</li><li>規格還是 v0.5，和程式碼不同步</li><li>生態整合只有 OpenSSL</li><li>版權和治理目前以 Microsoft 為主</li></ul></div>
-    <div class="card"><h4 style="color:var(--accent)">O 機會</h4><ul><li>PQC 遷移截止時間（CNSA 2.0）帶來強制的換機潮</li><li>DORA 和主權雲對「可退出性」的需求</li><li>PKCS#11 和 KMS 整合還是空白市場</li><li>台灣半導體供應鏈：ASIC 設計服務、封測、安全 IP</li></ul></div>
-    <div class="card"><h4 style="color:var(--sev-m)">T 威脅</h4><ul><li>FIPS L3 的認證時程和成本</li><li>規格可能被單一 hyperscaler 的需求帶著走</li><li>AWS、Google 推出自己的互斥方案</li><li>開源之後，硬體毛利會被壓縮</li></ul></div>
-  </div>
-
-  <h3>給安全 IP 廠商（例如 PUF / RoT 供應商）的具體切入點</h3>
-  <div class="callout"><b>規格明文要求 PUF：</b>CRD <b>ROT-14</b>（SHALL）要求 Tessera 內建 PUF，作為 Caliptra RoT 的裝置唯一熵與身分來源；<b>ROT-15</b>（SHALL）要求架構定義 PUF 衍生材料、fuse 材料或兩者如何進入 Caliptra 的身分推導與證明流程。這不是「可能的機會」，而是每一顆 Tessera 都必須滿足的需求，而且整合方式目前還沒定義。</div>
-  <div class="tscroll"><table>
-    <thead><tr><th>Tessera 的需求</th><th>規格依據</th><th>現在的做法</th><th>可以切入的產品</th></tr></thead>
-    <tbody>
-      <tr><td>PUF 作為 Caliptra 的熵與身分來源</td><td>CRD ROT-14、ROT-15</td><td>規格要求但尚未定義整合方式；RTL 與韌體都沒有 PUF</td><td>PUF IP，加上「PUF ↔ Caliptra 身分推導」的參考整合；可以主動提案寫進 ROT-15 的架構定義</td></tr>
-      <tr><td>UDS、BKS 等裝置根秘密的保存</td><td>CRD ROT-5、Sealing Primitives §BKS</td><td>std PAL 寫死在程式碼；Uno 由 bks_store 驅動讀取</td><td>PUF 推導或 PUF 加密保護的根秘密：免注入、抗探測，正好補上 H-1 的根因</td></tr>
-      <tr><td>SP 800-90B 熵源</td><td>CRD §Random Numbers、SEC-PCIE-FEATURES-4</td><td>RTL 只有 HMAC-DRBG（沒有熵源）</td><td>通過 90B 驗證的 TRNG IP</td></tr>
-      <tr><td>防竄改：溫度、電壓、頻率監控、shield</td><td>CRD §Physical Security（FIPS L3 必要）</td><td>RTL 裡還沒有</td><td>Anti-tamper sensor IP 和防護層</td></tr>
-      <tr><td>Caliptra 2.2 subsystem 整合</td><td>CRD ROT-1、ROT-2、ROT-12</td><td>必須是 Caliptra 2.2，且不得有其他 RoT；整合需通過 OCP-SAFE 審查</td><td>已經有「Caliptra + 自家 RoT」整合經驗的團隊，可以直接提供參考整合</td></tr>
-      <tr><td>RSA 和 PQC 加速器的 SCA 加固</td><td>FIPS 140-3 L3 非侵入式攻擊緩解</td><td>RSA 的 CRT 不能 blinding（M-2）</td><td>經過 SCA 加固的 PKA IP，或提供 SCA 評估服務</td></tr>
-    </tbody>
-  </table></div>
-  <p style="color:var(--muted);font-size:13px">以上「機會」是根據規格和程式碼缺口推出來的<b>假設</b>，還需要和 OCP 工作小組、潛在客戶驗證過才算數。這份文件刻意不放市場規模數字，因為沒有可靠的公開來源可以直接引用。</p>
-</div></section>
-
-<!-- ================= NEXT ================= -->
-<section id="next"><div class="wrap">
-  <h2><span class="num">08</span>建議的下一步（30 / 60 / 90 天）</h2>
-  <div class="grid3">
-    <div class="card"><h3 style="margin-top:0">30 天：先跑起來</h3><ul class="tight">
-      <li><code>cargo xtask precheck --setup</code>，在模擬器上跑完 <code>tsra_api_tests</code></li>
-      <li>用 <code>kvm-linux-nosnp</code> 的 sidecar 跑 ECC P-384 loop，量一次延遲</li>
-      <li>把 H-1、H-2、M-1 整理成 issue 或 responsible disclosure，先私下聯絡維護者</li>
-      <li>加入 OCP Tessera 工作小組的郵件清單</li>
-    </ul></div>
-    <div class="card"><h3 style="margin-top:0">60 天：找到位置</h3><ul class="tight">
-      <li>在 std PAL 的 <code>HsmSeedStore</code> 做一個「外部熵源 / PUF」的實作，當成 PoC（替換 seed.rs）</li>
-      <li>畫出自家 IP 對應 CRD 需求 ID 的表（REQ ↔ IP）</li>
-      <li>評估 PKCS#11 shim：包在 <code>api/native</code> 的 C ABI 上面</li>
-    </ul></div>
-    <div class="card"><h3 style="margin-top:0">90 天：對外</h3><ul class="tight">
-      <li>對 tessera-specs 提 PR：ROT-15 的 PUF 整合架構，以及 Entropy、Tamper、Key Storage 的需求細化</li>
-      <li>做一份可以展示的 demo：PUF 推導的 UDS 加上 DARC 搬一把 key</li>
-      <li>先和一家 FIPS 實驗室、一家 ASIC 設計服務公司談合作</li>
-    </ul></div>
-  </div>
-</div></section>
 
 <div class="wrap foot">
   <p><b>資料來源（commit 已固定）：</b>
   tessera-specs <span class="mono">bcdb753</span> · tessera-rtl <span class="mono">fc5e739</span> · tessera-sw <span class="mono">3281212</span> · tessera-linux-driver <span class="mono">a43d313</span> · tessera-sidecar-scripts <span class="mono">d3292a9</span> · unikraft <span class="mono">0a6044d</span>。
   所有 repo 都以 git submodule 的方式掛在這個 repo 的 <code>repos/</code> 底下。</p>
-  <p>這是靜態閱讀的結果，沒有執行程式碼，也沒有在硬體上驗證。資安發現在公開之前，請先走 responsible disclosure。</p>
+  <p>這是靜態閱讀的結果，沒有執行程式碼，也沒有在硬體上驗證。</p>
 </div>
 
 <script>
@@ -525,9 +413,9 @@ var LAYERS=[
   {t:'AES all modes',r:'rtl',p:'src/aes_all_modes',s:'~19.7k 行 · Caliptra/OpenTitan 系',d:['ECB/CBC/CTR/CFB/OFB/GCM','有 masking 和 shadowed 暫存器（抗故障注入）','CLP wrapper']},
   {t:'SHA-3 / SHAKE',r:'rtl',p:'src/sha3_shake_all_modes',s:'~12.2k 行',d:['KMAC、SHA-3、SHAKE','tessera_kmac_reg_top']},
   {t:'ECC ECDSA/ECDH',r:'rtl',p:'src/ecc_ecdsa_ecdhe',s:'~9.7k 行 · secp384r1',d:['tessera_ecc_top、dsa_ctrl、pm_ctrl，含 scalar blinding','⚠ RTL 裡只看得到 P-384；CRD 要求的 P-256、P-256K、P-521 都還沒有硬體實作']},
-  {t:'RSA 2k/3k/4k ★',r:'rtl',p:'src/rsa_4k_3k_2k',s:'~8.9k 行 · 唯一沒有 upstream 來源紀錄的區塊',d:['Montgomery 乘法、固定視窗 modexp、CRT + Garner','強制 Bellcore 驗證（防故障注入）','⚠ CRT 和 blinding 互斥，預設兩者都關閉（M-2）','⚠ 沒有 Key Vault 介面，私鑰經過 AHB']},
+  {t:'RSA 2k/3k/4k ★',r:'rtl',p:'src/rsa_4k_3k_2k',s:'~8.9k 行 · 唯一沒有 upstream 來源紀錄的區塊',d:['Montgomery 乘法、固定視窗 modexp、CRT + Garner','強制 Bellcore 驗證（防故障注入）','RTL 註解：CRT 與 exponent blinding 不能同時啟用；預設兩者皆為 0','RTL 註解：沒有 Key Vault 介面，私鑰經由匯流排寫入 RSA_D']},
   {t:'SHA-2 / HMAC / DRBG',r:'rtl',p:'src/',s:'sha256/512（含 masked 版）、hmac256/512、hmac_drbg',d:['SHA-256 和 SHA-512 各有 masked 版本（抗 DPA）','HMAC-DRBG 只有 398 行，只是 DRBG，沒有熵源','每個區塊都有 revinfo.yml 記錄 upstream commit']},
-  {t:'(缺) SoC 整合',r:'rtl',p:'—',s:'Key mover、pool manager、PCIe IDE/TDISP、GSRAM、tamper',d:['這些是 CRD 的核心安全需求，但 repo 裡還沒有','沒有它們就沒辦法驗證「韌體看不到明文金鑰」這個承諾（M-3）']},
+  {t:'CRD 有、RTL 中沒有的方塊',r:'rtl',p:'—',s:'Key mover、pool manager、PCIe IDE/TDISP、GSRAM、tamper',d:['CRD 列出這些方塊，tessera-rtl 目前沒有對應的 RTL']},
   {t:'CI：來源可追溯',r:'rtl',p:'.github/workflows/checks.yml',s:'round-trip diff 對 upstream',d:['verify_import、check_filelists','把改名去掉之後和 Caliptra 指定 commit 逐位元比對','reimport 可重現']}
  ]},
  {name:'L2 韌體核心',sub:'tessera-sw/fw/core · no_std Rust',color:'var(--c-fw)',nodes:[
@@ -541,25 +429,25 @@ var LAYERS=[
   {t:'Uno 實機韌體',r:'sw',p:'fw/plat/uno/fw',s:'36k 行 · Cortex-M · Embassy',d:['512K flash、187K DTCM','驅動：aes、upka、pqc、gdma、iic/oic（佇列）、vault、bks_store、rng、sha','32 個 handle_io task 的 pool','repo 裡唯一的實機平台；它和 CRD 的 4×M7 + PCIe Gen6 架構是不是同一顆晶片，repo 沒有說明']},
   {t:'Uno PQC fastpath',r:'sw',p:'fw/plat/uno/pqc',s:'6k 行 · 獨立 workspace',d:['PQC 用的獨立核心韌體','透過 mailbox/IPC 和 HSM core 溝通']},
   {t:'Uno RDL 和 reggen',r:'sw',p:'fw/plat/uno/{rdl,crates}',s:'SystemRDL → Rust 暫存器',d:['自寫 systemrdl parser 和 reggen','soc 和 cortex-m 暫存器對應']},
-  {t:'std PAL',r:'sw',p:'fw/plat/std',s:'14.8k 行 · tokio + OpenSSL',d:['在主機上原生跑 HSM core','模擬器（ddi_emu）和 sidecar 都用這層','⚠ seed.rs 寫死 UDS、BKS1、BKS2（H-1）']}
+  {t:'std PAL',r:'sw',p:'fw/plat/std',s:'14.8k 行 · tokio + OpenSSL',d:['在主機上原生跑 HSM core','模擬器（ddi_emu）和 sidecar 都用這層','seed.rs：UDS、BKS1、BKS2 為原始碼常數（檔案註解：取自先前的參考韌體，以便與實機位元相容）']}
  ]},
  {name:'L4 主機端',sub:'driver + SDK',color:'var(--c-host)',nodes:[
-  {t:'Linux driver tsra.ko',r:'drv',p:'/',s:'13k 行 C · GPL-2.0',d:['PCI 1414:C003（Microsoft vendor ID）','ioq、ioq_pool：NVMe 風格的佇列','hsm_dev（控制路徑 ioctl）、aes_dev（快速路徑 XTS/GCM）、mgmt_dev（PF 管理 VF 資源）','⚠ reset ioctl 沒有檢查權限（M-4）']},
+  {t:'Linux driver tsra.ko',r:'drv',p:'/',s:'13k 行 C · GPL-2.0',d:['PCI 1414:C003（Microsoft vendor ID）','ioq、ioq_pool：NVMe 風格的佇列','hsm_dev（控制路徑 ioctl）、aes_dev（快速路徑 XTS/GCM）、mgmt_dev（PF 管理 VF 資源）']},
   {t:'DDI 傳輸層',r:'sw',p:'ddi/',s:'nix · win · sock · emu · mock · mbor/sim',d:['ddi/interface：共用 trait','nix 和 win 對應實機驅動；emu 是同行程跑韌體；mock 和 mbor sim 是模擬器','sock：vsock 連 sidecar（沒有認證）']},
   {t:'tsra_api (Rust SDK)',r:'sw',p:'api/lib',s:'25k 行',d:['partition、session、resiliency','algo/*：每個演算法的高階 API','resiliency：Live Migration、IO abort、韌體 crash 之後透明復原']},
   {t:'tsra_api_native (C ABI)',r:'sw',p:'api/native',s:'14.7k 行 · cbindgen',d:['給 C/C++ 和其他語言用的 handle table','darc.rs、sd.rs、session_ex.rs','PKCS#11 適合包在這一層上面']},
   {t:'Test suites',r:'sw',p:'api/tests',s:'92k 行 · Rust + C++',d:['C++ fixture 可以切換 mock、emu 或實機驅動後端','EX/TBOR 和 legacy/MBOR 兩種 session 模式','⚠ EX 測試會 reset 所有分區，只能用測試機']}
  ]},
  {name:'L5 生態整合',sub:'plugins · examples',color:'var(--c-int)',nodes:[
-  {t:'OpenSSL 3 Provider',r:'sw',p:'plugins/ossl_prov',s:'22.5k 行 C+Rust',d:['RSA、EC（keymgmt/sig/enc）、ECDH、AES-GCM/XTS、HKDF、SHA-2','masked key 存放（store）','有 nginx 整合範例和整合測試','缺 PQC（L-2）']},
+  {t:'OpenSSL 3 Provider',r:'sw',p:'plugins/ossl_prov',s:'22.5k 行 C+Rust',d:['RSA、EC（keymgmt/sig/enc）、ECDH、AES-GCM/XTS、HKDF、SHA-2','masked key 存放（store）','有 nginx 整合範例和整合測試','目前不含 ML-DSA / ML-KEM']},
   {t:'OpenSSL Engine (legacy)',r:'sw',p:'plugins/ossl_engine',s:'16.6k 行',d:['用 ENGINE API 實作（OpenSSL 3 已棄用這套 API）','resiliency 子 crate']},
   {t:'Sealing service 範例',r:'sw',p:'examples/sealing',s:'root_svc · leaf_svc · report',d:['示範 Deployment Models 裡的 sealing service','root 和 leaf 兩層服務']},
   {t:'TPM crate',r:'sw',p:'crates/tpm',s:'3.6k 行',d:['TPM 指令、裝置存取與型別定義（commands / device / types）']},
-  {t:'(缺) PKCS#11 / KMIP / CNG',r:'sw',p:'—',s:'商業缺口',d:['傳統 HSM 生態的共通介面','Java、資料庫 TDE、CA 軟體、Vault 都需要','native API 文件已列出各演算法對應的 PKCS#11 mechanism，但沒有 PKCS#11 模組']}
+  
  ]},
  {name:'L6 Sidecar',sub:'機密 VM 軟體 HSM',color:'var(--c-side)',nodes:[
   {t:'sidecar build.sh',r:'side',p:'build.sh',s:'4 種 variant',d:['mshv-unikraft-snp（Hyper-V + SEV-SNP）','mshv-unikraft-nosnp、kvm-unikraft-nosnp','kvm-linux-nosnp（Linux 6.12 microvm + initramfs）','用 app-elfloader 直接跑沒改過的 Linux ELF']},
-  {t:'ddi_sock_server',r:'sw',p:'examples/sock/ddi_sock_server',s:'vsock :1234 · partition 10',d:['把 StdHsm 包成 vsock 服務','⚠ 沒有認證，作者標示為測試用（H-2）']},
+  {t:'ddi_sock_server',r:'sw',p:'examples/sock/ddi_sock_server',s:'vsock :1234 · partition 10',d:['把 StdHsm 包成 vsock 服務','作者註解：unauthenticated test transport，只適用於受信任、隔離的環境，不是 production service']},
   {t:'Unikraft fork',r:'uk',p:'plat/mshv',s:'新增 MSHV 平台 · ~4.9k 行 C',d:['mshv_snp.c、mshv_ghcb.c：SEV-SNP GHCB 協定','synic、shmem、tscclock','Microsoft Hyper-V 的 unikernel 支援']}
  ]}
 ];
@@ -599,7 +487,7 @@ var TREES=[
       ['undo/ · io/ · oob/ · evidence/ · tracing/','交易、IO、帶外指標',null],
       ['key-decode/ · key-unwrap/','金鑰匯入解析',null]]],
     ['pal/traits/','平台抽象 trait：alloc、cert、gdma、io、part、seed、session、vault',null],
-    ['plat/std/','主機原生 PAL：tokio + OpenSSL（14.8k）',[['pal/src/seed.rs','⚠ 寫死的 UDS 和 BKS'],['pal/src/part.rs','分區屬性存放']]],
+    ['plat/std/','主機原生 PAL：tokio + OpenSSL（14.8k）',[['pal/src/seed.rs','UDS、BKS 種子（原始碼常數）'],['pal/src/part.rs','分區屬性存放']]],
     ['plat/uno/','實機（Cortex-M，獨立 workspace）',[['fw/app','Embassy 進入點，32 個 IO task'],['fw/drivers/','aes、upka、pqc、gdma、iic、oic、vault、bks_store、rng、sha、uart…（23 個）'],['fw/crates/','key_vault、crashdump、trace、fault…'],['pqc/','PQC fastpath 核心韌體'],['rdl/ + crates/reggen','SystemRDL → Rust 暫存器']]]]],
   ['ddi/','主機端裝置介面',[['interface/','共用 trait'],['nix/ · win/','Linux / Windows 實機'],['emu/','同行程跑新版韌體'],['mock/ · mbor/sim/','模擬器'],['sock/','vsock 傳輸 + proto'],['tbor/ · mbor/','host 端的 codec']]],
   ['api/','SDK',[['lib/','Rust SDK：partition、session、resiliency、algo（25k）'],['native/','C ABI（cbindgen）：darc、sd、session_ex（14.7k）'],['tests/','Rust + C++ 一致性測試（92k）']]],

@@ -102,7 +102,7 @@ h2{font-size:21px;margin:26px 0 10px}
     <span><i class="sw" style="--c:var(--st-partial)"></i>部分實作／只有參考版</span>
     <span><i class="sw dash" style="--c:var(--st-missing)"></i>規格有，程式碼還沒公開</span>
     <span><i class="sw" style="--c:var(--st-ext)"></i>外部系統（不屬於 Tessera）</span>
-    <span>虛線箭頭 = 過渡或替代路徑</span>
+    <span>虛線箭頭 = 替代路徑</span>
   </div>
 
   <div class="mapbox"><svg id="map" viewBox="0 0 1400 1090" role="img" aria-label="Tessera 系統地圖">
@@ -117,14 +117,13 @@ h2{font-size:21px;margin:26px 0 10px}
     <div class="card" id="nodeCard"><h3>點一個元件</h3><div class="meta">會顯示它的職責、對應的 repo 與規格，以及目前狀態。</div></div>
   </div>
 
-  <h2>四層之間的關係，一次看懂</h2>
+  <h2>四層之間的關係（依規格與原始碼）</h2>
   <div class="kv">
     <div class="card"><h3>雲端 ↔ 晶片：靠憑證，不靠網路</h3><p>晶片不直接連雲端。所有雲端互動（金鑰傳輸、證明、備份）都經過 VM 裡的 SDK 轉送，晶片只負責驗證憑證鏈：製造商 → IDevID，Owner → AOAC，分區 Owner → POAC。所以就算網路斷了，HSM cache 模式還是能繼續運作。</p></div>
     <div class="card"><h3>VM ↔ 晶片：VF 直通，繞過 hypervisor</h3><p>每個租戶的 VM 透過 SR-IOV 拿到一個 VF，經過 IOMMU 直接 DMA 到晶片。TDISP 會把 VF 鎖成 TEE 的 TDI，IDE 則加密 PCIe 連線。營運者（hypervisor）只能透過 PF 建立或刪除分區，<b>看不到任何分區裡的金鑰</b>。</p></div>
     <div class="card"><h3>韌體 ↔ 晶片：Caliptra 管開機，M7 跑 HSM</h3><p>量產時，Caliptra 2.2 透過專用 I3C 以 OCP streaming boot 載入並量測所有核心的韌體（ROT-3、ROT-7），推導 DICE 身分，並獨占 DOE 處理 SPDM 證明（ROT-4）。HSM 邏輯（tessera-sw 的 <code>fw/core</code>）跑在控制核心上，透過 key mover 和 pool manager 使用加速器（tessera-rtl）。</p></div>
     <div class="card"><h3>金鑰平常放在哪裡？</h3><p><b>主機記憶體和雲端儲存。</b>Offloaded 模式下，金鑰都是 AES-GCM 遮罩過的 blob，由 VM 保管，每次使用時才由 key mover 在晶片裡解開。晶片內持久保存的只有根秘密與種子（fuse／PUF）；pinned key 只在執行期放在 GSRAM 的 Key Vault 裡。</p></div>
-    <div class="card"><h3>Sidecar 是什麼角色？</h3><p>還沒有實體晶片之前，把同一套 HSM 韌體編成軟體，跑在 SEV-SNP 機密 VM 裡，再透過 vsock 提供服務。API 和實機相容，但沒有硬體邊界；而且目前的裝置秘密寫死在程式碼裡（資安審查 H-1）。</p></div>
-    <div class="card"><h3>商業上的控制點</h3><p>（分析判斷）誰掌握 <b>Owner CA（AOTA/POTA/DATA）</b>，誰就掌握這顆 HSM 能接收誰的金鑰。這是雲端業者和企業之間真正的權力分配點；晶片廠和 IP 廠的價值則集中在 L3 邊界內那些還沒公開的方塊。</p></div>
+    <div class="card"><h3>Sidecar 是什麼？</h3><p>tessera-sidecar-scripts 的 README：把 <code>ddi_sock_server</code> 建成可開機的 guest 映像，可以是在 MSHV 或 QEMU/KVM 上執行的 Unikraft unikernel，也可以是在 QEMU/KVM 上執行的精簡 Linux。伺服器監聽 <b>vsock port 1234</b>，client 在 host 端執行。<code>ddi_sock_server</code> 使用 tessera-sw 的 std PAL（主機原生平台層）。</p></div>
   </div>
 
   <div class="foot">依據 tessera-specs v0.5.0（CRD、Deployment Models、DARC、Sealing）與 tessera-sw <code>3281212</code>、tessera-rtl <code>fc5e739</code> 的程式碼繪製。晶片內部方塊依 CRD 的需求章節排列，不是實際的 floorplan。</div>
@@ -146,7 +145,7 @@ var ZONES=[
  {x:10,y:195,w:1380,h:330,f:'--z-host',s:'--zs-host',t:'② 伺服器',sub:''},
  {x:25,y:228,w:575,h:285,f:'--z-tee',s:'--zs-tee',t:'機密 VM / TEE（租戶）',sub:'SEV-SNP · TDX'},
  {x:615,y:228,w:395,h:285,f:'--z-hv',s:'--zs-hv',t:'Hypervisor / Host OS（營運者）',sub:''},
- {x:1025,y:228,w:350,h:285,f:'--z-side',s:'--zs-side',t:'過渡方案：Sidecar 軟體 HSM',sub:''},
+ {x:1025,y:228,w:350,h:285,f:'--z-side',s:'--zs-side',t:'Sidecar：ddi_sock_server guest',sub:''},
  {x:10,y:540,w:1380,h:90,f:'--z-board',s:'--zs-board',t:'③ PCIe 卡／主機板',sub:''},
  {x:10,y:645,w:1380,h:435,f:'--z-chip',s:'--zs-chip',t:'④ Tessera ASIC',sub:'FIPS 140-3 Level 3 全晶片邊界'}
 ];
@@ -162,32 +161,30 @@ ZONES.forEach(function(z){
 var N={
  c_hsm:{x:30,y:48,w:175,h:110,t:'中央 HSM / 雲端 KMS',s:'Managed HSM、Thales、Entrust 等',st:'ext',repo:'—',spec:'DARC §Trust Model（Source HSM）',
    d:'金鑰的「源頭」。用 DARC 把單一把金鑰送進 Tessera 分區，或用 Masking Key Transfer 複製整個 Security Domain。傳統的 SKR/Key Import 路徑也從這裡出發。',
-   b:'如果傳統 HSM 廠商實作 DARC 的 source 端，它們的角色就從「被取代」變成「金鑰的根」。'},
+   b:''},
  c_mfg:{x:220,y:48,w:160,h:110,t:'製造商 CA',s:'IDevID 簽發',st:'ext',repo:'—',spec:'Deployment Models §IDevID',
    d:'晶片出廠時，Caliptra 在晶片內產生 IDevK，由製造商 CA 簽出 IDevID 憑證，用來證明「這是一顆真的 Tessera」。',
-   b:'哪家晶片廠出貨，哪家就經營這張 CA；跨廠商互信則交給 DARC。'},
+   b:''},
  c_owner:{x:395,y:48,w:195,h:110,t:'Owner CA',s:'AOTA · POTA · DATA(DARC)',st:'ext',repo:'tessera-sw: api/native/part_policy.rs',spec:'Deployment Models §AOAC/PAC/POAC',
    d:'三個信任錨：AOTA 簽 AOAC（這顆晶片屬於哪個服務），POTA 簽 POAC（這個分區屬於誰），DATA 則認證 DARC 的目標裝置。它們都綁在分區 policy_hash 裡。',
-   b:'整套系統的權力分配點：誰握有 POTA，誰就決定金鑰能流向哪裡。'},
+   b:''},
  c_fleet:{x:605,y:48,w:180,h:110,t:'機隊管理 / 韌體簽章',s:'OCP DOT · 雙簽章',st:'ext',repo:'—',spec:'Deployment Models §AOAC；CRD FW-SEC-2/3',
    d:'簽署並派送韌體。Caliptra 採用硬體雙簽章模型；OCP Device Ownership Transfer（DOT）讓裝置擁有者控制裝置層的憑證鏈，包括韌體簽章金鑰。',
-   b:'雲端業者用 DOT 拿回韌體主權，不必完全依賴晶片廠。'},
+   b:''},
  c_att:{x:800,y:48,w:180,h:110,t:'證明驗證服務',s:'Attestation verifier',st:'ext',repo:'tessera-sw: fw/core/evidence · key-report',spec:'Deployment Models §Attestation',
    d:'驗證 TEE 報告（SNP/TDX）和裝置證明（SPDM measurement、KeyReport），確認「這個 VM 連的是正確韌體版本的真 Tessera」之後，才放行金鑰。',
-   b:'可以和既有的雲端證明服務整合，也是第三方 SaaS 的機會。'},
+   b:''},
  c_seal:{x:995,y:48,w:180,h:110,t:'Sealing Service',s:'root_svc · leaf_svc',st:'partial',repo:'tessera-sw: examples/sealing',spec:'Primitives for Sealing Services；Deployment Models',
    d:'HSM 服務模式下的組態服務與 ring broker：可負責把 BKS3 安全地送進分區、協調 Security Domain 與分區複製。repo 裡目前只有範例實作。',
-   b:'把它產品化，就是「Tessera 叢集管理」軟體。'},
+   b:''},
  c_store:{x:1190,y:48,w:180,h:110,t:'耐久儲存',s:'Masked blobs · BMK 備份',st:'ext',repo:'—',spec:'Definition §Integrated HSM',
    d:'存放遮罩過的金鑰 blob 和備份用的 Masking Key（BMK）。這些都是密文，只有擁有同一個 Security Domain 的 Tessera 才解得開，所以可以放在一般的物件儲存。',
-   b:'金鑰不用「住在」HSM 裡，HSM 的容量就不再是擴展瓶頸。'},
+   b:''},
 
  g_app:{x:45,y:262,w:165,h:62,t:'App / nginx',s:'TLS · 簽章 · 加密',st:'ext',repo:'—',spec:'—',
    d:'租戶的工作負載，透過標準 OpenSSL API 呼叫 HSM，不需要改程式碼。',b:''},
  g_ossl:{x:225,y:262,w:165,h:62,t:'OpenSSL Provider',s:'plugins/ossl_prov',st:'partial',repo:'tessera-sw: plugins/ossl_prov',spec:'—',
-   d:'支援 RSA、EC、ECDH、AES-GCM/XTS、SHA-2、HKDF，以及 masked key store。缺 ML-DSA/ML-KEM。',b:'PQC 支援是近期最容易補上的缺口。'},
- g_pkcs:{x:225,y:345,w:165,h:62,t:'PKCS#11 / KMIP / CNG',s:'還沒有',st:'missing',repo:'—',spec:'—',
-   d:'傳統 HSM 生態（Java、資料庫 TDE、CA 軟體、Vault）的共通介面，整個專案目前沒有 PKCS#11 模組；native API 文件只列出各演算法對應的 PKCS#11 mechanism。',b:'明確的商業空白：誰先做出來，誰就是 Tessera 的企業入口。'},
+   d:'支援 RSA、EC、ECDH、AES-GCM/XTS、SHA-2、HKDF，以及 masked key store。缺 ML-DSA/ML-KEM。',b:''},
  g_api:{x:405,y:262,w:180,h:62,t:'tsra_api SDK',s:'api/lib · api/native',st:'open',repo:'tessera-sw: api/lib, api/native',spec:'Command Spec Part II',
    d:'管理分區、session、resiliency（Live Migration、IO abort、韌體 crash 之後透明復原）。提供 Rust API 和 C ABI。也是和雲端（KMS、Owner CA、Sealing Service）溝通的地方。',b:''},
  g_ddi:{x:405,y:345,w:180,h:62,t:'DDI 傳輸層',s:'ddi_nix · TBOR 編碼',st:'open',repo:'tessera-sw: ddi/nix, ddi/tbor',spec:'Command Spec Part I',
@@ -202,7 +199,7 @@ var N={
  h_tsm:{x:820,y:262,w:175,h:62,t:'TSM（TDISP 管理）',s:'鎖定 TDI · 設定 IDE',st:'ext',repo:'—',spec:'CRD SEC-PCIE-2, TDISP',
    d:'TEE Security Manager：透過 DOE/SPDM 和晶片建立 IDE 金鑰，把 VF 鎖成 TDI，再交給 TEE 驗收。',b:''},
  h_pf:{x:630,y:345,w:170,h:62,t:'tsra.ko（PF 端）',s:'mgmt_dev · VF 資源',st:'open',repo:'tessera-linux-driver: tsra_mgmt*.c',spec:'Deployment Models §PF and VF',
-   d:'營運者用 PF 建立 VF 和分區、分配佇列資源。建立之後，分區的設定（使用者、憑證）都只能透過 VF 做。',b:'營運者管得到資源，碰不到金鑰：這是對雲端租戶最重要的承諾。'},
+   d:'營運者用 PF 建立 VF 和分區、分配佇列資源。建立之後，分區的設定（使用者、憑證）都只能透過 VF 做。',b:''},
  h_iommu:{x:630,y:428,w:170,h:62,t:'IOMMU / SR-IOV',s:'VF 直通',st:'ext',repo:'—',spec:'CRD BASE-14/15',
    d:'把 VF 的 DMA 範圍限制在指定 VM 的記憶體裡。單埠模式下每個 PF 最多 512 個 VF，雙埠模式每個 PF 256 個。',b:''},
  h_bmc:{x:820,y:428,w:175,h:62,t:'BMC / 機櫃管理',s:'Telemetry · FW 派送',st:'ext',repo:'—',spec:'CRD BASE-38、ROT-3',
@@ -211,9 +208,9 @@ var N={
  s_vm:{x:1045,y:262,w:310,h:62,t:'Unikraft / Linux microvm',s:'mshv-unikraft-snp 等 4 種 variant',st:'partial',repo:'tessera-sidecar-scripts · unikraft',spec:'—',
    d:'用 app-elfloader 直接執行沒改過的 Linux ELF。SNP variant 會跑在 Hyper-V 的 AMD SEV-SNP 機密 VM 裡。',b:''},
  s_srv:{x:1045,y:345,w:310,h:62,t:'ddi_sock_server',s:'vsock :1234 · 沒有認證',st:'partial',repo:'tessera-sw: examples/sock/ddi_sock_server',spec:'—',
-   d:'把軟體 HSM 包成 vsock 服務。作者標示為測試用，沒有任何認證（資安審查 H-2）。',b:''},
+   d:'把軟體 HSM 包成 vsock 服務。作者註解：這是 unauthenticated test transport，只適用於受信任、隔離的環境，不是 production service。',b:''},
  s_std:{x:1045,y:428,w:310,h:62,t:'std PAL + HSM core（軟體）',s:'同一套 fw/core',st:'partial',repo:'tessera-sw: fw/plat/std',spec:'—',
-   d:'和實機同一套 HSM 核心，只是平台層換成主機原生的 tokio + OpenSSL。裝置秘密（UDS、BKS1、BKS2）寫死在 seed.rs（H-1）。',b:'讓客戶提早開發和整合，但不能拿來做安全宣稱。'},
+   d:'和實機同一套 HSM 核心，只是平台層換成主機原生的 tokio + OpenSSL。',b:''},
 
  b_flash:{x:40,y:572,w:175,h:46,t:'QSPI Flash',s:'外接 flash 開機 · 復原',st:'missing',repo:'—',spec:'CRD HW-QSPI-1..6、FW-SVC-3',d:'兩組 QSPI：一組接 Caliptra，一組給控制核心（含 RPMC 計數器）。必須支援從外接 flash 開機，每個映像至少 3 個 slot 供復原；量產則改用 streaming boot。加密過的 Host ID Keys 也存在外接 flash。',b:''},
  b_rtc:{x:235,y:572,w:175,h:46,t:'RTC / 機殼入侵',s:'Tamper 事件',st:'missing',repo:'—',spec:'CRD CINTR-1..6',d:'機殼入侵感測器接到 Tessera。斷電時由 RTC 電源和外接 CR2032 電池維持偵測並記錄時間戳；復電後中斷安全處理器，由韌體第一個處理。',b:''},
@@ -222,17 +219,17 @@ var N={
  b_pwr:{x:1015,y:572,w:175,h:46,t:'電源 / 散熱',s:'D0/D3 · L1.2',st:'missing',repo:'—',spec:'CRD §Power, §Thermal',d:'電源狀態和散熱設計。',b:''},
 
  k_cal:{x:35,y:690,w:200,h:66,t:'Caliptra 2.2 RoT',s:'Secure boot · DICE · SPDM',st:'ext',repo:'chipsalliance/caliptra（外部）',spec:'CRD ROT-1..15',
-   d:'信任的起點，而且必須是唯一的 RoT（ROT-1、ROT-2）。它載入並量測所有韌體（ROT-7），推導 IDevID → LDevID → FMC Alias 身分鏈，實作 SPDM 並獨占 DOE 介面（ROT-4），還提供至少 32 階的防回滾計數器（ROT-11）。',b:'RoT 本身是公共財，但 ROT-14 要求內建 PUF 作為 Caliptra 的熵與身分來源，而且整合方式（ROT-15）還沒定義。這正是 PUF 廠商的位置。'},
+   d:'信任的起點，而且必須是唯一的 RoT（ROT-1、ROT-2）。它載入並量測所有韌體（ROT-7），推導 IDevID → LDevID → FMC Alias 身分鏈，實作 SPDM 並獨占 DOE 介面（ROT-4），還提供至少 32 階的防回滾計數器（ROT-11）。',b:''},
  k_otp:{x:255,y:690,w:160,h:66,t:'Fuses / PUF',s:'UDS · Field Entropy · BKS',st:'missing',repo:'tessera-sw: fw/plat/uno/fw/drivers/bks_store',spec:'CRD ROT-5、ROT-14、ROT-15；Sealing §BKS',
-   d:'Caliptra 的 UDS 和 Field Entropy 放在 fuse 裡，除役時必須能清零（ROT-5）。規格要求內建 PUF，作為裝置唯一熵與身分來源（ROT-14），並要定義 PUF 和 fuse 材料如何進入身分推導（ROT-15）。BKS 種子在韌體中由 bks_store 驅動讀取。',b:'規格明文要求 PUF，而且 RTL 和韌體裡都還沒有：這是 PUF IP 最直接的切入點。'},
+   d:'Caliptra 的 UDS 和 Field Entropy 放在 fuse 裡，除役時必須能清零（ROT-5）。規格要求內建 PUF，作為裝置唯一熵與身分來源（ROT-14），並要定義 PUF 和 fuse 材料如何進入身分推導（ROT-15）。BKS 種子在韌體中由 bks_store 驅動讀取。',b:''},
  k_q:{x:435,y:690,w:180,h:66,t:'NVMe 風格佇列引擎',s:'1536 組 SQ/CQ · IIC/OIC',st:'missing',repo:'tessera-sw: fw/plat/uno/fw/drivers/iic, oic',spec:'CRD BASE-4..9',
    d:'接收各 VF 的提交佇列，把指令交給控制核心，完成後寫回完成佇列並觸發 MSI-X。',b:''},
  k_pcie:{x:635,y:690,w:180,h:66,t:'PCIe 控制器',s:'IDE · TDISP · DOE',st:'missing',repo:'—',spec:'CRD SEC-PCIE-1..8',
    d:'PCIe Gen6 端點，支援 IDE（AES-256-GCM 連線加密）、TDISP 和 DOE（承載 SPDM）。IDE 金鑰只有 PCIe IP 和安全處理器碰得到。',b:''},
  k_tamper:{x:1015,y:690,w:170,h:66,t:'防竄改感測',s:'溫度 · 電壓 · 頻率 · shield',st:'missing',repo:'—',spec:'CRD §Physical Security',
-   d:'FIPS 140-3 L3 要求的物理防護：tamper shield、溫度感測、電壓與頻率監控、有 parity 保護的多位元安全暫存器。存放明文金鑰的加速器、記憶體與緩衝區都必須在保護範圍內。',b:'安全 IP 廠商的直接切入點。'},
+   d:'FIPS 140-3 L3 要求的物理防護：tamper shield、溫度感測、電壓與頻率監控、有 parity 保護的多位元安全暫存器。存放明文金鑰的加速器、記憶體與緩衝區都必須在保護範圍內。',b:''},
  k_trng:{x:1205,y:690,w:170,h:66,t:'TRNG + DRBG',s:'SP 800-90A/B/C',st:'partial',repo:'tessera-rtl: src/hmac_drbg',spec:'CRD §Random Numbers',
-   d:'RTL 只有 HMAC-DRBG（398 行），沒有熵源。TRNG 要另外取得並通過 90B 驗證。',b:'經過 90B 驗證的 TRNG IP 是明確的需求。'},
+   d:'RTL 只有 HMAC-DRBG（398 行），沒有熵源。TRNG 要另外取得並通過 90B 驗證。',b:''},
 
  k_mcu:{x:35,y:790,w:200,h:62,t:'Caliptra MCU',s:'Subsystem MCU',st:'ext',repo:'chipsalliance/caliptra-mcu-sw（外部）',spec:'CRD ROT-1、ROT-3',
    d:'Caliptra 2.x subsystem 裡的 MCU，配合 Caliptra 完成 streaming boot、recovery 和韌體載入。',b:''},
@@ -248,7 +245,7 @@ var N={
  k_gsram:{x:35,y:890,w:380,h:66,t:'GSRAM 8 MB ⊃ Key Vault 4 MB',s:'Pinned keys · 工作緩衝',st:'missing',repo:'tessera-sw: fw/plat/uno/fw/drivers/vault, crates/key_vault',spec:'CRD KEY-PIN-1/2, BASE-11/12',
    d:'晶片內 SRAM。Key Vault 區只有指定的硬體或核心能讀寫，用來放 pinned key（每個租戶 8 KB，共 512 個租戶）。',b:''},
  k_km:{x:435,y:890,w:180,h:66,t:'Key Mover',s:'AES-GCM 解遮罩 · 權限檢查',st:'missing',repo:'—',spec:'CRD KEY-OFF-7, §Key Mover',
-   d:'整個設計的核心：把 masked key 在硬體裡解開，直接送進加速器，<b>控制核心看不到明文</b>。目前沒有公開的 RTL（資安審查 M-3）。',b:'價值最高、也最難的方塊。'},
+   d:'整個設計的核心：把 masked key 在硬體裡解開，直接送進加速器，<b>控制核心看不到明文</b>。目前沒有公開的 RTL。',b:''},
  k_pool:{x:635,y:880,w:740,h:180,t:'Pool Manager + 加速器池',s:'一個指令就能完成整個運算（含 padding、KDF）',st:'partial',repo:'tessera-rtl: src/*',spec:'CRD §Accelerator Pools, §Pool Manager',
    d:'Pool manager 負責排程和 QoS（還沒公開）；底下的加速器 RTL 已經開源，12 個裡有 11 個來自 Caliptra。',b:''}
 };
@@ -271,7 +268,7 @@ var E=[
  ['c_seal','g_api',[5]],['k_otp','k_cores',[5]],
  ['g_ddi','s_srv',[6],1],['s_srv','s_std',[6]],['s_vm','s_srv',[6]],
  ['h_hv','h_pf',[7]],['h_pf','b_pcie',[7]],['h_hv','h_iommu',[7]],
- ['g_pkcs','g_api',[],1],['g_tee','g_api',[]]
+ ['g_tee','g_api',[]]
 ];
 
 /* ---------------- flows ---------------- */
@@ -319,11 +316,11 @@ var F=[
    ['k_cores','韌體以 BKS1、BKS2、BKS3 加上信任錨推導 Backup Key，用它保護分區初始化時隨機產生的 Masking Key（SdCreateRemoteBackup）'],
    ['g_api','SDK 取回備份（BMK）'],
    ['c_store','BMK 存到耐久儲存；同製造商、同 Owner、同 POTA 的 Tessera 可以用 SdRestore* 還原']]},
- {id:6,c:'--f6',t:'Sidecar（過渡路徑）',sum:'還沒有晶片時，同一套 SDK 改連機密 VM 裡的軟體 HSM。',steps:[
+ {id:6,c:'--f6',t:'Sidecar（vsock 路徑）',sum:'同一套 SDK 透過 ddi_sock 連到 guest 裡的 ddi_sock_server。',steps:[
    ['g_ddi','DDI 層從 ddi_nix 換成 ddi_sock，連到 vsock://CID:1234'],
-   ['s_srv','ddi_sock_server 接收請求（⚠ 沒有認證）'],
-   ['s_std','軟體 HSM core 處理請求（⚠ 種子寫死）'],
-   ['s_vm','整個服務跑在 SEV-SNP 機密 VM 裡：擋得住 host 讀記憶體，但不是 FIPS 硬體邊界']]},
+   ['s_srv','ddi_sock_server 接收請求（作者標示為測試用傳輸）'],
+   ['s_std','軟體 HSM core（std PAL）處理請求'],
+   ['s_vm','README 的 variant 表：mshv-unikraft-snp 在 MSHV 上以 AMD SEV-SNP 隔離執行；其他 variant 沒有隔離']]},
  {id:7,c:'--f7',t:'營運者管理（PF）',sum:'雲端營運者能做什麼、不能做什麼。',steps:[
    ['h_hv','Hypervisor 建立 VM'],
    ['h_pf','透過 PF 建立 VF 和分區、分配佇列資源'],
@@ -424,7 +421,7 @@ function selectNode(id){
     (id==='k_pool'?'<ul>'+ACC.map(function(a){return '<li><b>'+a[0]+'</b>：'+a[1]+'（'+STL[a[2]]+'）</li>';}).join('')+'</ul>':'')+
     '<ul><li><b>Repo：</b>'+n.repo+'</li><li><b>規格：</b>'+n.spec+'</li>'+
     (flows.length?'<li><b>參與的流程：</b>'+flows.map(function(f){return '<a href="#" data-f="'+f.id+'">'+f.id+'. '+f.t+'</a>';}).join('、')+'</li>':'')+'</ul>'+
-    (n.b?'<p style="margin:8px 0 0;font-size:13.5px"><b>商業觀點：</b>'+n.b+'</p>':'');
+    '';
   nodeCard.querySelectorAll('a[data-f]').forEach(function(a){a.onclick=function(ev){ev.preventDefault();setFlow(+a.getAttribute('data-f'));};});
 }
 document.getElementById('resetBtn').onclick=function(){setFlow(null);if(curNode)nodeEls[curNode].classList.remove('sel');curNode=null;nodeCard.innerHTML='<h3>點一個元件</h3><div class="meta">會顯示它的職責、對應的 repo 與規格，以及目前狀態。</div>';};
