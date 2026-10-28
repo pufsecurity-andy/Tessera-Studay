@@ -1,0 +1,18 @@
+[submodule "repos/tessera-specs"]
+	path = repos/tessera-specs
+	url = https://github.com/TesseraHSM/tessera-specs.git
+[submodule "repos/tessera-rtl"]
+	path = repos/tessera-rtl
+	url = https://github.com/TesseraHSM/tessera-rtl.git
+[submodule "repos/tessera-sw"]
+	path = repos/tessera-sw
+	url = https://github.com/TesseraHSM/tessera-sw.git
+[submodule "repos/tessera-linux-driver"]
+	path = repos/tessera-linux-driver
+	url = https://github.com/TesseraHSM/tessera-linux-driver.git
+[submodule "repos/tessera-sidecar-scripts"]
+	path = repos/tessera-sidecar-scripts
+	url = https://github.com/TesseraHSM/tessera-sidecar-scripts.git
+[submodule "repos/unikraft"]
+	path = repos/unikraft
+	url = https://github.com/TesseraHSM/unikraft.git
