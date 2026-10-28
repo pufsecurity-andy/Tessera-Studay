@@ -264,9 +264,9 @@ var chip=document.getElementById('chip');
 function zoneEl(cls,label,col){var z=document.createElement('div');z.className='zone '+cls;z.style.gridColumn=col;z.innerHTML='<span class="zl">'+label+'</span>';z.style.gridTemplateColumns='repeat(12,1fr)';return z;}
 var main=zoneEl('', '', '1/13');main.style.padding='0';main.style.background='none';
 var zones={main:main,
-  pool:zoneEl('pool','加速器池（租戶可見的運算都在這裡）','1/13'),
-  sec:zoneEl('sec','安全處理器域（與資料路徑隔離，ROT-1）','5/13'),
-  aon:zoneEl('aon','常時供電域、物理防護與周邊','1/13')};
+  pool:zoneEl('pool','Accelerator Pools（CRD §Accelerator Pools）','1/13'),
+  sec:zoneEl('sec','Security Processor（CRD ROT-1）','5/13'),
+  aon:zoneEl('aon','RTC／入侵偵測、Physical Security、Hardware Interfaces（CRD）','1/13')};
 chip.appendChild(main);chip.appendChild(zones.pool);
 var row3=document.createElement('div');row3.style.cssText='grid-column:1/13;display:grid;grid-template-columns:repeat(12,1fr);gap:8px';
 chip.appendChild(row3);
