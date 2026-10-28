@@ -21,7 +21,12 @@ a{color:var(--accent);text-decoration:none}
 header{display:flex;align-items:center;justify-content:space-between;padding:22px 0 0}
 .btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:3px 10px;font:inherit;font-size:12.5px;cursor:pointer}
 h1{font-size:32px;margin:34px 0 8px;line-height:1.25}
-.lede{color:var(--muted);margin:0 0 28px;max-width:720px}
+.lede{color:var(--muted);margin:0 0 14px;max-width:720px}
+.intro{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:0 0 24px}
+.intro .src{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;color:var(--muted);margin-bottom:4px}
+.q{margin:6px 0 10px;font-size:15px}
+.en{color:var(--muted);font-size:13px;margin-top:3px;line-height:1.5}
+.enl{display:inline-block;font-size:10.5px;font-weight:700;border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-right:5px;vertical-align:1px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
 .card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;color:var(--ink);transition:border-color .15s, transform .15s}
 .card:hover{border-color:var(--accent);transform:translateY(-1px)}
@@ -37,7 +42,11 @@ footer{color:var(--muted);font-size:12.5px;padding:36px 0 50px}
 <div class="wrap">
   <header><b>Tessera Study</b><button class="btn" id="themeBtn" type="button">主題</button></header>
   <h1>Tessera 研究頁面</h1>
-  <p class="lede">分析 <a href="https://github.com/TesseraHSM">TesseraHSM</a> 開源整合式 HSM 專案的規格、晶片 RTL、韌體與主機軟體。</p>
+  <p class="lede">整理 <a href="https://github.com/TesseraHSM">TesseraHSM</a> 六個公開 repo 的規格、晶片 RTL、韌體與主機軟體。</p>
+  <div class="intro"><div class="src">tessera-specs · Tessera - Definition.md</div>
+  <div class="q"><div>整合式 HSM 代表產業在擴展硬體安全模組（HSM）與現代化金鑰管理方式上的一次演進。</div><div class="en" lang="en"><span class="enl">原文</span>Integrated HSM represents an evolution in how the industry can scale hardware security modules (HSMs) and modernize key management.</div></div>
+  <div class="q"><div>Tessera 是完全開源的軟體、韌體與晶片整合式 HSM 設計，提供透明度與一致性，並為各種 HSM 解決方案之間的互通建立共同基礎。和 Caliptra 一樣，Tessera 開放給整個產業協作。</div><div class="en" lang="en"><span class="enl">原文</span>Tessera is a fully open-source, software, firmware, and silicon integrated HSM design that provides transparency, consistency and establishes a common foundation for interoperability across HSM solutions. Like Caliptra, Tessera is available for industry-wide collaboration.</div></div>
+  </div>
   <div class="grid" id="pages"></div>
   <footer>原始碼與分析對象的 submodule：<a href="https://github.com/pufsecurity-andy/Tessera-Studay">pufsecurity-andy/Tessera-Studay</a></footer>
 </div>
