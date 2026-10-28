@@ -7,11 +7,12 @@
 | 路徑 | 說明 |
 | --- | --- |
 | [`codemap/index.html`](codemap/index.html) | **Code Map**：七層架構展開圖、請求路徑、六個 repo 的模組樹、TBOR 指令集、信任鏈、資安審查、商業分析 |
+| [`codemap/system-map.html`](codemap/system-map.html) | **System Map**：雲端、伺服器（VM/hypervisor/sidecar）、PCIe 卡、晶片四層的關係圖，可切換 7 條資料流（運算、DARC 金鑰進入、證明、開機更新、備份、sidecar、營運者管理） |
 | `repos/` | 六個 TesseraHSM repo 的 git submodule，固定在分析當下的 commit |
 
 ## 怎麼看 Code Map
 
-GitHub 不會直接渲染 HTML。請把 repo clone 下來（或在 GitHub 上下載 `codemap/index.html`），再用瀏覽器打開。它是單一檔案，不需要網路就能看。
+GitHub 不會直接渲染 HTML。請把 repo clone 下來（或在 GitHub 上下載 `codemap/` 底下的 HTML 檔），再用瀏覽器打開。每個頁面都是單一檔案，不需要網路就能看。
 
 ## 取得原始碼
 

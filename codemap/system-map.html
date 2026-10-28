@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tessera System Map</title>
+<meta name="description" content="Tessera 整合式 HSM 的系統地圖：雲端、伺服器、PCIe 卡、晶片之間的關係與資料流。">
+<style>
+:root{
+  --bg:#f7f7f5; --panel:#ffffff; --panel2:#f0efeb; --ink:#1d1d1b; --muted:#5f5e5a; --line:#d6d4cc;
+  --accent:#2f5bd3;
+  --z-cloud:#eaf1fd; --z-host:#f3eefc; --z-tee:#e9f6f3; --z-hv:#fbf1e6; --z-side:#f1f6e6; --z-board:#f1f0ec; --z-chip:#fdeee9;
+  --zs-cloud:#7da2e8; --zs-host:#a990de; --zs-tee:#5fb3a3; --zs-hv:#dca46a; --zs-side:#9cbf5a; --zs-board:#a9a69c; --zs-chip:#e08a6c;
+  --st-open:#067647; --st-partial:#b54708; --st-missing:#8a8a85; --st-ext:#2f5bd3;
+  --f1:#2563eb; --f2:#c026d3; --f3:#0f766e; --f4:#c2410c; --f5:#7c3aed; --f6:#b42318; --f7:#4d7c0f;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141413; --panel:#1c1c1a; --panel2:#262622; --ink:#ecebe6; --muted:#a3a29b; --line:#3a3933;
+    --accent:#7aa2ff;
+    --z-cloud:#17223a; --z-host:#221b33; --z-tee:#132a26; --z-hv:#2e2215; --z-side:#1f2914; --z-board:#22221f; --z-chip:#33201a;
+    --zs-cloud:#4a6fb8; --zs-host:#7a63b0; --zs-tee:#3c8a7c; --zs-hv:#a87a45; --zs-side:#6f8f3a; --zs-board:#6c6a62; --zs-chip:#b0644a;
+    --st-open:#6ee7b7; --st-partial:#fdba74; --st-missing:#8a8a85; --st-ext:#7aa2ff;
+    --f1:#60a5fa; --f2:#e879f9; --f3:#2dd4bf; --f4:#fb923c; --f5:#a78bfa; --f6:#ff8a80; --f7:#a3e635;
+  }
+}
+:root[data-theme="dark"]{
+    --bg:#141413; --panel:#1c1c1a; --panel2:#262622; --ink:#ecebe6; --muted:#a3a29b; --line:#3a3933;
+    --accent:#7aa2ff;
+    --z-cloud:#17223a; --z-host:#221b33; --z-tee:#132a26; --z-hv:#2e2215; --z-side:#1f2914; --z-board:#22221f; --z-chip:#33201a;
+    --zs-cloud:#4a6fb8; --zs-host:#7a63b0; --zs-tee:#3c8a7c; --zs-hv:#a87a45; --zs-side:#6f8f3a; --zs-board:#6c6a62; --zs-chip:#b0644a;
+    --st-open:#6ee7b7; --st-partial:#fdba74; --st-missing:#8a8a85; --st-ext:#7aa2ff;
+    --f1:#60a5fa; --f2:#e879f9; --f3:#2dd4bf; --f4:#fb923c; --f5:#a78bfa; --f6:#ff8a80; --f7:#a3e635;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans)}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.88em;background:var(--panel2);padding:.1em .35em;border-radius:4px}
+.wrap{max-width:1440px;margin:0 auto;padding:0 16px}
+header.top{border-bottom:1px solid var(--line);background:var(--panel)}
+header.top .wrap{display:flex;align-items:center;gap:14px;min-height:52px;flex-wrap:wrap}
+header.top b{font-size:15px}
+header.top .sp{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:4px 10px;font:inherit;font-size:13px;cursor:pointer}
+h1{font-size:28px;margin:28px 0 6px;line-height:1.25}
+.lede{color:var(--muted);max-width:980px;margin:0 0 16px}
+.flows{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 10px}
+.flow-btn{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:5px 12px 5px 9px;font:inherit;font-size:13.5px;cursor:pointer}
+.flow-btn i{width:12px;height:12px;border-radius:50%;display:inline-block;background:var(--c)}
+.flow-btn[aria-pressed="true"]{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12.5px;color:var(--muted);margin:4px 0 10px;align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:22px;height:12px;border-radius:3px;border:2px solid var(--c);background:var(--panel)}
+.sw.dash{border-style:dashed}
+.mapbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:auto}
+#map{display:block;width:100%;min-width:1100px;height:auto}
+#map text{font-family:var(--sans);pointer-events:none}
+.nd{cursor:pointer}
+.nd rect.b{fill:var(--panel);stroke-width:1.6;transition:opacity .15s}
+.nd:hover rect.b{filter:drop-shadow(0 2px 6px rgba(0,0,0,.15))}
+.nd.sel rect.b{stroke-width:3}
+.nd.dim{opacity:.28}
+.ed{fill:none;stroke:var(--muted);stroke-width:1.4;opacity:.55;transition:opacity .15s}
+.ed.dash{stroke-dasharray:5 4}
+.ed.dim{opacity:.08}
+.ed.on{opacity:1;stroke-width:2.6}
+.step{font-size:11px;font-weight:700}
+.bottom{display:grid;grid-template-columns:1.1fr 1fr;gap:14px;margin:14px 0 30px}
+@media (max-width:900px){.bottom{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+.card h3{margin:0 0 6px;font-size:16px}
+.card .meta{font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.card ol,.card ul{margin:6px 0 0;padding-left:20px}
+.card li{margin:3px 0}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:5px;border:1px solid currentColor;margin-left:6px;vertical-align:middle}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:40px}
+.kv .card p{margin:4px 0;font-size:14px}
+h2{font-size:21px;margin:26px 0 10px}
+.foot{color:var(--muted);font-size:12.5px;padding:10px 0 50px}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <b>Tessera System Map</b>
+  <div class="sp">
+    <a class="btn" href="index.html">← Code Map</a>
+    <button class="btn" id="resetBtn" type="button">清除選取</button>
+    <button class="btn" id="themeBtn" type="button">主題</button>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <h1>系統地圖：雲端、伺服器、PCIe 卡、晶片之間的關係</h1>
+  <p class="lede">由上而下分成四層，也就是四個信任範圍：<b>雲端控制平面</b>、<b>伺服器</b>（分成租戶的機密 VM 和營運者的 hypervisor）、<b>PCIe 卡和主機板</b>、<b>Tessera 晶片</b>（FIPS 140-3 L3 邊界）。點任一個元件看細節；點上方的流程按鈕，會依序標出那條資料流經過的路徑。</p>
+
+  <div class="flows" id="flows"></div>
+  <div class="legend">
+    <span><i class="sw" style="--c:var(--st-open)"></i>開源且已實作</span>
+    <span><i class="sw" style="--c:var(--st-partial)"></i>部分實作／只有參考版</span>
+    <span><i class="sw dash" style="--c:var(--st-missing)"></i>規格有，程式碼還沒公開</span>
+    <span><i class="sw" style="--c:var(--st-ext)"></i>外部系統（不屬於 Tessera）</span>
+    <span>虛線箭頭 = 過渡或替代路徑</span>
+  </div>
+
+  <div class="mapbox"><svg id="map" viewBox="0 0 1400 1090" role="img" aria-label="Tessera 系統地圖">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker>
+    </defs>
+    <g id="zones"></g><g id="edges"></g><g id="nodes"></g><g id="steps"></g>
+  </svg></div>
+
+  <div class="bottom">
+    <div class="card" id="flowCard"><h3>選一條流程</h3><div class="meta">上方按鈕可以切換。每條流程都會在圖上標出步驟編號。</div></div>
+    <div class="card" id="nodeCard"><h3>點一個元件</h3><div class="meta">會顯示它的職責、對應的 repo 與規格，以及目前狀態。</div></div>
+  </div>
+
+  <h2>四層之間的關係，一次看懂</h2>
+  <div class="kv">
+    <div class="card"><h3>雲端 ↔ 晶片：靠憑證，不靠網路</h3><p>晶片不直接連雲端。所有雲端互動（金鑰傳輸、證明、備份）都經過 VM 裡的 SDK 轉送，晶片只負責驗證憑證鏈：製造商 → IDevID，Owner → AOAC，分區 Owner → POAC。所以就算網路斷了，HSM cache 模式還是能繼續運作。</p></div>
+    <div class="card"><h3>VM ↔ 晶片：VF 直通，繞過 hypervisor</h3><p>每個租戶的 VM 透過 SR-IOV 拿到一個 VF，經過 IOMMU 直接 DMA 到晶片。TDISP 會把 VF 鎖成 TEE 的 TDI，IDE 則加密 PCIe 連線。營運者（hypervisor）只能透過 PF 建立或刪除分區，<b>看不到任何分區裡的金鑰</b>。</p></div>
+    <div class="card"><h3>韌體 ↔ 晶片：Caliptra 管開機，M7 跑 HSM</h3><p>Caliptra 2.2 從 QSPI flash 驗證並載入韌體，推導 DICE 身分，處理 SPDM 證明。HSM 邏輯（tessera-sw 的 <code>fw/core</code>）跑在控制核心上，透過 key mover 和 pool manager 使用加速器（tessera-rtl）。</p></div>
+    <div class="card"><h3>金鑰平常放在哪裡？</h3><p><b>主機記憶體和雲端儲存。</b>Offloaded 模式下，金鑰都是 AES-GCM 遮罩過的 blob，由 VM 保管，每次使用時才由 key mover 在晶片裡解開。晶片內只長期保存種子（OTP）和少量的 pinned key（GSRAM Key Vault）。</p></div>
+    <div class="card"><h3>Sidecar 是什麼角色？</h3><p>還沒有實體晶片之前，把同一套 HSM 韌體編成軟體，跑在 SEV-SNP 機密 VM 裡，再透過 vsock 提供服務。API 和實機相容，但沒有硬體邊界；而且目前的裝置秘密寫死在程式碼裡（資安審查 H-1）。</p></div>
+    <div class="card"><h3>商業上的控制點</h3><p>誰掌握 <b>Owner CA（AOTA/POTA/DATA）</b>，誰就掌握這顆 HSM 能接收誰的金鑰。這是雲端業者和企業之間真正的權力分配點；晶片廠和 IP 廠的價值則集中在 L3 邊界內那些還沒公開的方塊。</p></div>
+  </div>
+
+  <div class="foot">依據 tessera-specs v0.5.0（CRD、Deployment Models、DARC、Sealing）與 tessera-sw <code>3281212</code>、tessera-rtl <code>fc5e739</code> 的程式碼繪製。晶片內部方塊依 CRD 的需求章節排列，不是實際的 floorplan。</div>
+</div>
+
+<script>
+(function(){
+var r=document.documentElement,b=document.getElementById('themeBtn');
+try{var t=localStorage.getItem('tsr-theme');if(t)r.setAttribute('data-theme',t);}catch(e){}
+b.onclick=function(){var c=r.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var n=c==='dark'?'light':'dark';r.setAttribute('data-theme',n);try{localStorage.setItem('tsr-theme',n);}catch(e){}};
+})();
+
+var NS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+
+/* ---------------- zones ---------------- */
+var ZONES=[
+ {x:10,y:10,w:1380,h:170,f:'--z-cloud',s:'--zs-cloud',t:'① 雲端／控制平面',sub:'雲端業者、企業、HSM 廠商、製造商'},
+ {x:10,y:195,w:1380,h:330,f:'--z-host',s:'--zs-host',t:'② 伺服器',sub:''},
+ {x:25,y:228,w:575,h:285,f:'--z-tee',s:'--zs-tee',t:'機密 VM / TEE（租戶）',sub:'SEV-SNP · TDX'},
+ {x:615,y:228,w:395,h:285,f:'--z-hv',s:'--zs-hv',t:'Hypervisor / Host OS（營運者）',sub:''},
+ {x:1025,y:228,w:350,h:285,f:'--z-side',s:'--zs-side',t:'過渡方案：Sidecar 軟體 HSM',sub:''},
+ {x:10,y:540,w:1380,h:90,f:'--z-board',s:'--zs-board',t:'③ PCIe 卡／主機板',sub:''},
+ {x:10,y:645,w:1380,h:435,f:'--z-chip',s:'--zs-chip',t:'④ Tessera ASIC',sub:'FIPS 140-3 Level 3 全晶片邊界'}
+];
+var zg=document.getElementById('zones');
+ZONES.forEach(function(z){
+  el('rect',{x:z.x,y:z.y,width:z.w,height:z.h,rx:12,fill:'var('+z.f+')',stroke:'var('+z.s+')','stroke-width':1.5},zg);
+  var t=el('text',{x:z.x+14,y:z.y+22,'font-size':14,'font-weight':700,fill:'var(--ink)'},zg);t.textContent=z.t;
+  if(z.sub){var s=el('text',{x:z.x+14+z.t.length*14+10,y:z.y+22,'font-size':11.5,fill:'var(--muted)'},zg);s.textContent=z.sub;}
+});
+
+/* ---------------- nodes ---------------- */
+// st: open | partial | missing | ext
+var N={
+ c_hsm:{x:30,y:48,w:175,h:110,t:'中央 HSM / 雲端 KMS',s:'Managed HSM、Thales、Entrust 等',st:'ext',repo:'—',spec:'DARC §Trust Model（Source HSM）',
+   d:'金鑰的「源頭」。用 DARC 把單一把金鑰送進 Tessera 分區，或用 Masking Key Transfer 複製整個 Security Domain。傳統的 SKR/Key Import 路徑也從這裡出發。',
+   b:'如果傳統 HSM 廠商實作 DARC 的 source 端，它們的角色就從「被取代」變成「金鑰的根」。'},
+ c_mfg:{x:220,y:48,w:160,h:110,t:'製造商 CA',s:'IDevID 簽發',st:'ext',repo:'—',spec:'Deployment Models §IDevID',
+   d:'晶片出廠時，Caliptra 在晶片內產生 IDevK，由製造商 CA 簽出 IDevID 憑證，用來證明「這是一顆真的 Tessera」。',
+   b:'哪家晶片廠出貨，哪家就經營這張 CA；跨廠商互信則交給 DARC。'},
+ c_owner:{x:395,y:48,w:195,h:110,t:'Owner CA',s:'AOTA · POTA · DATA(DARC)',st:'ext',repo:'tessera-sw: api/native/part_policy.rs',spec:'Deployment Models §AOAC/PAC/POAC',
+   d:'三個信任錨：AOTA 簽 AOAC（這顆晶片屬於哪個服務），POTA 簽 POAC（這個分區屬於誰），DATA 則認證 DARC 的目標裝置。它們都綁在分區 policy_hash 裡。',
+   b:'整套系統的權力分配點：誰握有 POTA，誰就決定金鑰能流向哪裡。'},
+ c_fleet:{x:605,y:48,w:180,h:110,t:'機隊管理 / 韌體簽章',s:'OCP DOT · 雙簽章',st:'ext',repo:'—',spec:'CRD §Firmware Update and Rollback',
+   d:'簽署並派送韌體。Caliptra 採用雙簽章模型（廠商＋Owner），OCP Device Ownership Transfer 讓 Owner 能換掉韌體簽章金鑰。',
+   b:'雲端業者用 DOT 拿回韌體主權，不必完全依賴晶片廠。'},
+ c_att:{x:800,y:48,w:180,h:110,t:'證明驗證服務',s:'Attestation verifier',st:'ext',repo:'tessera-sw: fw/core/evidence · key-report',spec:'Deployment Models §Attestation',
+   d:'驗證 TEE 報告（SNP/TDX）和裝置證明（SPDM measurement、KeyReport），確認「這個 VM 連的是正確韌體版本的真 Tessera」之後，才放行金鑰。',
+   b:'可以和既有的雲端證明服務整合，也是第三方 SaaS 的機會。'},
+ c_seal:{x:995,y:48,w:180,h:110,t:'Sealing Service',s:'root_svc · leaf_svc',st:'partial',repo:'tessera-sw: examples/sealing',spec:'Primitives for Sealing Services',
+   d:'HSM 服務模式下的組態和 ring broker：建立 Security Domain、派送 BKS3 和 Masking Key，協調多個 Tessera 之間的分區複製。repo 裡目前只有範例實作。',
+   b:'把它產品化，就是「Tessera 叢集管理」軟體。'},
+ c_store:{x:1190,y:48,w:180,h:110,t:'耐久儲存',s:'Masked blobs · BMK 備份',st:'ext',repo:'—',spec:'Definition §Integrated HSM',
+   d:'存放遮罩過的金鑰 blob 和備份用的 Masking Key（BMK）。這些都是密文，只有擁有同一個 Security Domain 的 Tessera 才解得開，所以可以放在一般的物件儲存。',
+   b:'金鑰不用「住在」HSM 裡，HSM 的容量就不再是擴展瓶頸。'},
+
+ g_app:{x:45,y:262,w:165,h:62,t:'App / nginx',s:'TLS · 簽章 · 加密',st:'ext',repo:'—',spec:'—',
+   d:'租戶的工作負載，透過標準 OpenSSL API 呼叫 HSM，不需要改程式碼。',b:''},
+ g_ossl:{x:225,y:262,w:165,h:62,t:'OpenSSL Provider',s:'plugins/ossl_prov',st:'partial',repo:'tessera-sw: plugins/ossl_prov',spec:'—',
+   d:'支援 RSA、EC、ECDH、AES-GCM/XTS、SHA-2、HKDF，以及 masked key store。缺 ML-DSA/ML-KEM。',b:'PQC 支援是近期最容易補上的缺口。'},
+ g_pkcs:{x:225,y:345,w:165,h:62,t:'PKCS#11 / KMIP / CNG',s:'還沒有',st:'missing',repo:'—',spec:'—',
+   d:'傳統 HSM 生態（Java、資料庫 TDE、CA 軟體、Vault）的共通介面，整個專案目前都還沒有。',b:'明確的商業空白：誰先做出來，誰就是 Tessera 的企業入口。'},
+ g_api:{x:405,y:262,w:180,h:62,t:'tsra_api SDK',s:'api/lib · api/native',st:'open',repo:'tessera-sw: api/lib, api/native',spec:'Command Spec Part II',
+   d:'管理分區、session、resiliency（斷線或 reset 後自動重建）。提供 Rust API 和 C ABI。也是和雲端（KMS、Owner CA、Sealing Service）溝通的地方。',b:''},
+ g_ddi:{x:405,y:345,w:180,h:62,t:'DDI 傳輸層',s:'ddi_nix · TBOR 編碼',st:'open',repo:'tessera-sw: ddi/nix, ddi/tbor',spec:'Command Spec Part I',
+   d:'把指令編成 TBOR（4 byte header + TOC + data），透過 ioctl 交給驅動。也可以換成 ddi_sock（sidecar）或 ddi_emu（模擬器）。',b:''},
+ g_drv:{x:405,y:428,w:180,h:62,t:'tsra.ko（VF 端）',s:'PCI 1414:C003',st:'open',repo:'tessera-linux-driver',spec:'CRD §Base Platform',
+   d:'在 VM 裡驅動 VF：管理 NVMe 風格的 SQ/CQ、pin 使用者頁做 DMA、處理 MSI-X 中斷。AES 走獨立的 fast path。',b:''},
+ g_tee:{x:45,y:428,w:165,h:62,t:'TEE 證明',s:'SNP / TDX report',st:'ext',repo:'—',spec:'Sealing §Initial Attestation',
+   d:'VM 本身的機密運算證明。和裝置的 SPDM 證明一起送給驗證服務，證明「對的 VM 連到對的 HSM」。',b:''},
+
+ h_hv:{x:630,y:262,w:170,h:62,t:'Hyper-V / KVM',s:'VM 生命週期',st:'ext',repo:'unikraft: plat/mshv（sidecar 用）',spec:'—',
+   d:'建立 VM，把 VF 指派給 VM。在機密運算模型裡，hypervisor 不受信任。',b:''},
+ h_tsm:{x:820,y:262,w:175,h:62,t:'TSM（TDISP 管理）',s:'鎖定 TDI · 設定 IDE',st:'ext',repo:'—',spec:'CRD SEC-PCIE-2, TDISP',
+   d:'TEE Security Manager：透過 DOE/SPDM 和晶片建立 IDE 金鑰，把 VF 鎖成 TDI，再交給 TEE 驗收。',b:''},
+ h_pf:{x:630,y:345,w:170,h:62,t:'tsra.ko（PF 端）',s:'mgmt_dev · VF 資源',st:'open',repo:'tessera-linux-driver: tsra_mgmt*.c',spec:'Deployment Models §PF and VF',
+   d:'營運者用 PF 建立 VF 和分區、分配佇列資源。建立之後，分區的設定（使用者、憑證）都只能透過 VF 做。',b:'營運者管得到資源，碰不到金鑰：這是對雲端租戶最重要的承諾。'},
+ h_iommu:{x:630,y:428,w:170,h:62,t:'IOMMU / SR-IOV',s:'VF 直通',st:'ext',repo:'—',spec:'CRD BASE-14/15',
+   d:'把 VF 的 DMA 範圍限制在指定 VM 的記憶體裡。每個 port 最多 512 個 VF。',b:''},
+ h_bmc:{x:820,y:428,w:175,h:62,t:'BMC / 機櫃管理',s:'Telemetry · FW 派送',st:'ext',repo:'—',spec:'CRD BASE-38',
+   d:'透過 I3C 或 PCIe VDM 上的 MCTP，做韌體更新、遙測、crash dump 收集。',b:''},
+
+ s_vm:{x:1045,y:262,w:310,h:62,t:'Unikraft / Linux microvm',s:'mshv-unikraft-snp 等 4 種 variant',st:'partial',repo:'tessera-sidecar-scripts · unikraft',spec:'—',
+   d:'用 app-elfloader 直接執行沒改過的 Linux ELF。SNP variant 會跑在 Hyper-V 的 AMD SEV-SNP 機密 VM 裡。',b:''},
+ s_srv:{x:1045,y:345,w:310,h:62,t:'ddi_sock_server',s:'vsock :1234 · 沒有認證',st:'partial',repo:'tessera-sw: examples/sock/ddi_sock_server',spec:'—',
+   d:'把軟體 HSM 包成 vsock 服務。作者標示為測試用，沒有任何認證（資安審查 H-2）。',b:''},
+ s_std:{x:1045,y:428,w:310,h:62,t:'std PAL + HSM core（軟體）',s:'同一套 fw/core',st:'partial',repo:'tessera-sw: fw/plat/std',spec:'—',
+   d:'和實機同一套 HSM 核心，只是平台層換成主機原生的 tokio + OpenSSL。裝置秘密（UDS、BKS1、BKS2）寫死在 seed.rs（H-1）。',b:'讓客戶提早開發和整合，但不能拿來做安全宣稱。'},
+
+ b_flash:{x:40,y:572,w:175,h:46,t:'QSPI Flash',s:'韌體映像 · 加密的 Host ID key',st:'missing',repo:'—',spec:'CRD §QSPI',d:'存放韌體映像，以及加密過的 Host ID Keys。',b:''},
+ b_rtc:{x:235,y:572,w:175,h:46,t:'RTC / 機殼入侵',s:'Tamper 事件',st:'missing',repo:'—',spec:'CRD §Chassis Intrusion',d:'即時時鐘和機殼開啟偵測，事件會觸發清除金鑰。',b:''},
+ b_pcie:{x:630,y:572,w:170,h:46,t:'PCIe Gen6 x4',s:'1x4 或 2x2 多主機',st:'missing',repo:'—',spec:'CRD BASE-1..3',d:'可以拆成 2x2，讓一張卡同時服務兩台主機，各自的資料路徑互相隔離。',b:''},
+ b_i3c:{x:820,y:572,w:175,h:46,t:'I3C / MCTP',s:'頻外管理',st:'missing',repo:'—',spec:'CRD §I2C, I3C and USB',d:'BMC 用的頻外管理匯流排。',b:''},
+ b_pwr:{x:1015,y:572,w:175,h:46,t:'電源 / 散熱',s:'D0/D3 · L1.2',st:'missing',repo:'—',spec:'CRD §Power, §Thermal',d:'電源狀態和散熱設計。',b:''},
+
+ k_cal:{x:35,y:690,w:200,h:66,t:'Caliptra 2.2 RoT',s:'Secure boot · DICE · SPDM',st:'ext',repo:'chipsalliance/caliptra（外部）',spec:'CRD §Root of Trust',
+   d:'信任的起點：驗證韌體、推導 IDevID → LDevID → FMC Alias 身分鏈、量測韌體、回應 SPDM 證明。規格寫死要用 Caliptra 2.2。',b:'RoT 已經是公共財了，差異化要放在它周邊（熵源、PUF、防竄改）。'},
+ k_otp:{x:255,y:690,w:160,h:66,t:'OTP / Fuses',s:'UDS · BKS1 · BKS2',st:'missing',repo:'tessera-sw: fw/plat/uno/fw/drivers/bks_store',spec:'Sealing §BKS',
+   d:'裝置唯一秘密（UDS）和 Backup Key Seed。韌體有 bks_store 驅動，但存放這些值的硬體不在 RTL repo 裡。',b:'PUF 推導的 UDS/HUK 可以取代熔絲注入，也正好解決 H-1 的根本原因。'},
+ k_q:{x:435,y:690,w:180,h:66,t:'NVMe 風格佇列引擎',s:'1536 組 SQ/CQ · IIC/OIC',st:'missing',repo:'tessera-sw: fw/plat/uno/fw/drivers/iic, oic',spec:'CRD BASE-4..9',
+   d:'接收各 VF 的提交佇列，把指令交給控制核心，完成後寫回完成佇列並觸發 MSI-X。',b:''},
+ k_pcie:{x:635,y:690,w:180,h:66,t:'PCIe 控制器',s:'IDE · TDISP · DOE',st:'missing',repo:'—',spec:'CRD SEC-PCIE-1..8',
+   d:'PCIe Gen6 端點，支援 IDE（AES-256-GCM 連線加密）、TDISP 和 DOE（承載 SPDM）。IDE 金鑰只有 PCIe IP 和安全處理器碰得到。',b:''},
+ k_tamper:{x:1015,y:690,w:170,h:66,t:'防竄改感測',s:'溫度 · 電壓 · 頻率 · shield',st:'missing',repo:'—',spec:'CRD §Physical Security',
+   d:'FIPS L3 必要的防護：偵測到異常就清除明文金鑰。',b:'安全 IP 廠商的直接切入點。'},
+ k_trng:{x:1205,y:690,w:170,h:66,t:'TRNG + DRBG',s:'SP 800-90A/B/C',st:'partial',repo:'tessera-rtl: src/hmac_drbg',spec:'CRD §Random Numbers',
+   d:'RTL 只有 HMAC-DRBG（398 行），沒有熵源。TRNG 要另外取得並通過 90B 驗證。',b:'經過 90B 驗證的 TRNG IP 是明確的需求。'},
+
+ k_mcu:{x:35,y:790,w:200,h:62,t:'Caliptra MCU',s:'開機 · 復原 · 更新',st:'ext',repo:'chipsalliance/caliptra-mcu-sw（外部）',spec:'CRD §Firmware Update',
+   d:'Caliptra subsystem 的 MCU，從 flash 載入映像，處理 recovery 和韌體更新流程。',b:''},
+ k_cores:{x:435,y:790,w:180,h:62,t:'控制核心 4×M7',s:'HSM 韌體（fw/core）',st:'partial',repo:'tessera-sw: fw/core, fw/plat/uno',spec:'CRD BASE-10',
+   d:'執行 HSM 核心：TBOR 分派、session、分區狀態、DARC 和備份流程。韌體已經開源；Uno 平台看起來是上一代晶片，不是 Tessera 規格的 4×M7。',b:''},
+ k_pqcc:{x:635,y:790,w:180,h:62,t:'PQC fastpath 核心',s:'fw/plat/uno/pqc',st:'partial',repo:'tessera-sw: fw/plat/uno/pqc',spec:'CRD §PQC Cryptography',
+   d:'專門處理 PQC 的核心韌體，透過 mailbox/IPC 和主核心溝通。',b:''},
+ k_gdma:{x:835,y:790,w:160,h:62,t:'GDMA',s:'主機 ↔ GSRAM',st:'partial',repo:'tessera-sw: fw/plat/uno/fw/drivers/gdma',spec:'CRD §GDMA',
+   d:'在主機記憶體和晶片內部 SRAM 之間搬資料，也負責清除記憶體（zeroize）。',b:''},
+ k_hasher:{x:1015,y:790,w:170,h:62,t:'Host Memory Hasher',s:'大文件雜湊',st:'missing',repo:'—',spec:'CRD §Host Memory Hashing',
+   d:'直接對主機記憶體裡的大資料做雜湊（SHA2/3、SHAKE），支援 ML-DSA external-mu 的整份文件簽章。',b:''},
+
+ k_gsram:{x:35,y:890,w:380,h:66,t:'GSRAM 8 MB ⊃ Key Vault 4 MB',s:'Pinned keys · 工作緩衝',st:'missing',repo:'tessera-sw: fw/plat/uno/fw/drivers/vault, crates/key_vault',spec:'CRD KEY-PIN-1/2, BASE-11/12',
+   d:'晶片內 SRAM。Key Vault 區只有指定的硬體或核心能讀寫，用來放 pinned key（每個租戶 8 KB，共 512 個租戶）。',b:''},
+ k_km:{x:435,y:890,w:180,h:66,t:'Key Mover',s:'AES-GCM 解遮罩 · 權限檢查',st:'missing',repo:'—',spec:'CRD KEY-OFF-7, §Key Mover',
+   d:'整個設計的核心：把 masked key 在硬體裡解開，直接送進加速器，<b>控制核心看不到明文</b>。目前沒有公開的 RTL（資安審查 M-3）。',b:'價值最高、也最難的方塊。'},
+ k_pool:{x:635,y:880,w:740,h:180,t:'Pool Manager + 加速器池',s:'一個指令就能完成整個運算（含 padding、KDF）',st:'partial',repo:'tessera-rtl: src/*',spec:'CRD §Accelerator Pools, §Pool Manager',
+   d:'Pool manager 負責排程和 QoS（還沒公開）；底下的加速器 RTL 已經開源，12 個裡有 11 個來自 Caliptra。',b:''}
+};
+var ACC=[
+ ['ECC','只有 P-384','partial'],['RSA ★','CRT · Bellcore','partial'],['ML-DSA/KEM','所有等級','open'],['AES','GCM · masked','open'],['SHA2 / SHA3','含 masked','open'],['HMAC','256/384/512','open']
+];
+var ST={open:'--st-open',partial:'--st-partial',missing:'--st-missing',ext:'--st-ext'};
+var STL={open:'開源已實作',partial:'部分／參考',missing:'尚未公開',ext:'外部系統'};
+
+/* ---------------- edges ---------------- */
+// [from, to, flows[], dashed?]
+var E=[
+ ['g_app','g_ossl',[1]],['g_ossl','g_api',[1]],['g_api','g_ddi',[1,2,5]],['g_ddi','g_drv',[1,2,5]],
+ ['g_drv','h_iommu',[1,2,5,7]],['h_iommu','b_pcie',[1,2,5,7]],['b_pcie','k_pcie',[1,2,3,5,7]],
+ ['k_pcie','k_q',[1,2,5]],['k_q','k_cores',[1,2,5]],['k_cores','k_gdma',[1]],['k_cores','k_km',[1,2]],['k_km','k_pool',[1]],
+ ['k_gsram','k_km',[2]],['k_trng','k_pool',[]],['k_tamper','k_gsram',[]],['b_rtc','k_tamper',[]],['k_gdma','k_hasher',[]],
+ ['c_hsm','g_api',[2]],['c_owner','g_api',[2,3]],['g_api','c_store',[2,5]],
+ ['c_mfg','k_cal',[3],1],['k_otp','k_cal',[3]],['k_cal','k_cores',[3,4]],['k_cal','k_pcie',[3]],['b_pcie','h_tsm',[3]],['h_tsm','g_tee',[3]],['g_tee','c_att',[3]],
+ ['c_fleet','h_bmc',[4]],['h_bmc','b_i3c',[4]],['b_i3c','k_cal',[4]],['b_flash','k_mcu',[4]],['k_mcu','k_cal',[4]],['k_cores','k_pqcc',[4]],
+ ['c_seal','g_api',[5]],['k_otp','k_cores',[5]],
+ ['g_ddi','s_srv',[6],1],['s_srv','s_std',[6]],['s_vm','s_srv',[6]],
+ ['h_hv','h_pf',[7]],['h_pf','b_pcie',[7]],['h_hv','h_iommu',[7]],
+ ['g_pkcs','g_api',[],1],['g_tee','g_api',[]]
+];
+
+/* ---------------- flows ---------------- */
+var F=[
+ {id:1,c:'--f1',t:'加密運算',sum:'App 簽一次章，從使用者空間走到晶片內的加速器再回來。',steps:[
+   ['g_app','App 呼叫 EVP_PKEY_sign()，私鑰是 provider 管理的 masked key handle'],
+   ['g_ossl','Provider 把運算轉成 tsra_api 呼叫'],
+   ['g_api','SDK 在既有 session 裡組 EccSign（0x18）請求，附上 masked key blob'],
+   ['g_ddi','編成 TBOR，透過 ioctl 交給驅動'],
+   ['g_drv','驅動寫入 VF 的 SQ，敲 doorbell'],
+   ['h_iommu','DMA 直通，不經過 hypervisor'],
+   ['k_pcie','PCIe 封包以 IDE 加密進入晶片'],
+   ['k_q','佇列引擎把 SQE 交給控制核心'],
+   ['k_cores','韌體驗證 session 和權限，GDMA 把參數搬進 GSRAM'],
+   ['k_km','Key mover 在硬體裡解開 masked key，明文不經過韌體'],
+   ['k_pool','ECC 加速器完成簽章，結果經 GDMA 寫回，寫入 CQE 並觸發 MSI-X']]},
+ {id:2,c:'--f2',t:'金鑰進入（DARC）',sum:'中央 HSM 把一把金鑰交給 VM 旁邊的 Tessera，全程不出 HSM 邊界。',steps:[
+   ['c_owner','分區的 policy 裡已經綁定 POTA（認證來源端）和 DATA（認證目標端）'],
+   ['g_api','目標端執行 DarcKexKeyGen，產生 KEX 金鑰和憑證鏈'],
+   ['c_hsm','來源 HSM 驗證目標憑證鏈到 DATA，產生 TMK，用 HPKE-Auth 封裝（DarcTmkExport），再用 TMK 包住金鑰（DarcKeyWrap）'],
+   ['g_api','SDK 把 sealed_tmk 和 wrapped_key 送進晶片'],
+   ['k_cores','DarcTmkImport：驗證來源鏈到 POTA，用 HPKE 打開 TMK'],
+   ['k_km','DarcKeyUnwrap：用 TMK 解開金鑰，馬上用分區 MK 重新遮罩'],
+   ['c_store','回傳的 masked key blob 存到耐久儲存，晶片內不保留']]},
+ {id:3,c:'--f3',t:'信任與證明',sum:'從製造到執行期，一路建立「這是真的 Tessera、跑的是對的韌體、連的是對的 VM」。',steps:[
+   ['c_mfg','出廠時，製造商 CA 對 Caliptra 產生的 IDevK 簽出 IDevID'],
+   ['k_otp','UDS 從 OTP 進入 Caliptra，作為 DICE 的根'],
+   ['k_cal','Caliptra 量測韌體，推導 LDevID → FMC Alias（帶韌體量測值）'],
+   ['c_owner','Owner 用 AOTA 簽 AOAC、用 POTA 簽 POAC，經由 SDK 安裝'],
+   ['k_pcie','TSM 透過 DOE 跑 SPDM：取得裝置憑證和量測值，建立 IDE 金鑰'],
+   ['h_tsm','TDISP 把 VF 鎖成 TDI，交給 TEE'],
+   ['g_tee','TEE 驗收 TDI，把自己的 SNP/TDX report 和裝置證明一起送出'],
+   ['c_att','驗證服務確認兩者都正確之後，才放行金鑰']]},
+ {id:4,c:'--f4',t:'開機與韌體更新',sum:'韌體從 flash 進入晶片，以及透過 BMC 頻外更新的路徑。',steps:[
+   ['b_flash','韌體映像存在 QSPI flash'],
+   ['k_mcu','Caliptra MCU 載入映像'],
+   ['k_cal','Caliptra 驗證雙簽章（廠商＋Owner）和 SVN（防回滾），然後量測'],
+   ['k_cores','控制核心和 PQC 核心開始執行 HSM 韌體'],
+   ['c_fleet','更新時，機隊管理系統簽好新映像'],
+   ['h_bmc','BMC 透過 I3C 上的 MCTP 把映像送進 Caliptra'],
+   ['b_i3c','經 I3C / MCTP 進入晶片']]},
+ {id:5,c:'--f5',t:'備份與復原',sum:'Masking Key 怎麼備份，怎麼在另一顆 Tessera 上還原。',steps:[
+   ['k_otp','BKS1（裝置類別）、BKS2（Owner）從 OTP 交給韌體'],
+   ['c_seal','Sealing Service 派送 BKS3（分區 Owner），建立 Security Domain'],
+   ['k_cores','BK = KDF(BKS1‖BKS2‖BKS3, 信任錨)，用來遮罩 MK，得到 BMK（SdCreateRemoteBackup）'],
+   ['g_api','SDK 取回 BMK'],
+   ['c_store','BMK 存到耐久儲存；換了一顆同 Owner 的 Tessera 後，用 SdRestore* 還原']]},
+ {id:6,c:'--f6',t:'Sidecar（過渡路徑）',sum:'還沒有晶片時，同一套 SDK 改連機密 VM 裡的軟體 HSM。',steps:[
+   ['g_ddi','DDI 層從 ddi_nix 換成 ddi_sock，連到 vsock://CID:1234'],
+   ['s_srv','ddi_sock_server 接收請求（⚠ 沒有認證）'],
+   ['s_std','軟體 HSM core 處理請求（⚠ 種子寫死）'],
+   ['s_vm','整個服務跑在 SEV-SNP 機密 VM 裡：擋得住 host 讀記憶體，但不是 FIPS 硬體邊界']]},
+ {id:7,c:'--f7',t:'營運者管理（PF）',sum:'雲端營運者能做什麼、不能做什麼。',steps:[
+   ['h_hv','Hypervisor 建立 VM'],
+   ['h_pf','透過 PF 建立 VF 和分區、分配佇列資源'],
+   ['h_iommu','把 VF 指派給 VM，設定 IOMMU'],
+   ['b_pcie','之後所有分區設定都只走 VF。PF 看不到分區金鑰，AOAC 角色也不能讀取分區內容']]}
+];
+
+/* ---------------- render ---------------- */
+var gN=document.getElementById('nodes'),gE=document.getElementById('edges'),gS=document.getElementById('steps');
+var nodeEls={},edgeEls=[];
+function ctr(n){return [n.x+n.w/2,n.y+n.h/2];}
+function anchors(a,b){
+  var ca=ctr(a),cb=ctr(b),dx=cb[0]-ca[0],dy=cb[1]-ca[1];
+  var vert = Math.abs(dy) > 20 && (Math.abs(dy)*1.6 > Math.abs(dx) || (a.x < b.x+b.w && b.x < a.x+a.w));
+  if(vert){
+    var p1=[ca[0], dy>0?a.y+a.h:a.y], p2=[cb[0], dy>0?b.y:b.y+b.h];
+    var my=(p1[1]+p2[1])/2; return 'M'+p1+' C'+p1[0]+','+my+' '+p2[0]+','+my+' '+p2;
+  }
+  var q1=[dx>0?a.x+a.w:a.x, ca[1]], q2=[dx>0?b.x:b.x+b.w, cb[1]];
+  var mx=(q1[0]+q2[0])/2; return 'M'+q1+' C'+mx+','+q1[1]+' '+mx+','+q2[1]+' '+q2;
+}
+E.forEach(function(e){
+  var p=el('path',{d:anchors(N[e[0]],N[e[1]]),class:'ed'+(e[3]?' dash':''),'marker-end':'url(#arr)'},gE);
+  edgeEls.push({el:p,a:e[0],b:e[1],f:e[2]});
+});
+function wrapText(g,str,x,y,size,maxW,fill,weight){
+  // simple CJK-aware wrap
+  var chars=Array.from(str),lines=[''],w=0,lim=maxW/(size*0.98);
+  chars.forEach(function(ch){var cw=/[\u0000-ÿ]/.test(ch)?0.56:1;if(w+cw>lim&&lines[lines.length-1]){lines.push('');w=0;}lines[lines.length-1]+=ch;w+=cw;});
+  lines.forEach(function(l,i){var t=el('text',{x:x,y:y+i*(size+3),'font-size':size,fill:fill,'font-weight':weight||400,'text-anchor':'middle'},g);t.textContent=l;});
+  return lines.length;
+}
+Object.keys(N).forEach(function(id){
+  var n=N[id],g=el('g',{class:'nd','data-id':id,tabindex:0,role:'button','aria-label':n.t},gN);
+  var col='var('+ST[n.st]+')';
+  el('rect',{class:'b',x:n.x,y:n.y,width:n.w,height:n.h,rx:9,stroke:col,'stroke-dasharray':n.st==='missing'?'6 4':'none'},g);
+  el('rect',{x:n.x,y:n.y,width:n.w,height:4,rx:2,fill:col},g);
+  if(id==='k_pool'){
+    var t=el('text',{x:n.x+14,y:n.y+26,'font-size':14,'font-weight':700,fill:'var(--ink)'},g);t.textContent=n.t;
+    var s=el('text',{x:n.x+14,y:n.y+45,'font-size':11.5,fill:'var(--muted)'},g);s.textContent=n.s+' · Pool manager 本身尚未公開';
+    var aw=110,gap=10,x0=n.x+14;
+    ACC.forEach(function(a,i){
+      var ax=x0+i*(aw+gap),ay=n.y+62,c='var('+ST[a[2]]+')';
+      el('rect',{x:ax,y:ay,width:aw,height:96,rx:8,fill:'var(--panel2)',stroke:c,'stroke-width':1.4},g);
+      var t1=el('text',{x:ax+aw/2,y:ay+38,'font-size':13,'font-weight':700,fill:'var(--ink)','text-anchor':'middle'},g);t1.textContent=a[0];
+      var t2=el('text',{x:ax+aw/2,y:ay+58,'font-size':11,fill:'var(--muted)','text-anchor':'middle'},g);t2.textContent=a[1];
+    });
+  } else {
+    var big=n.h>=90, ty=n.y+(big?38:24);
+    var lines=wrapText(g,n.t,n.x+n.w/2,ty,big?14:13,n.w-16,'var(--ink)',700);
+    wrapText(g,n.s,n.x+n.w/2,ty+lines*16+(big?6:2),11,n.w-14,'var(--muted)');
+  }
+  g.addEventListener('click',function(){selectNode(id);});
+  g.addEventListener('keydown',function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();selectNode(id);}});
+  nodeEls[id]=g;
+});
+
+/* ---------------- interaction ---------------- */
+var curFlow=null,curNode=null;
+var flowsEl=document.getElementById('flows'),flowCard=document.getElementById('flowCard'),nodeCard=document.getElementById('nodeCard');
+F.forEach(function(f){
+  var b=document.createElement('button');b.type='button';b.className='flow-btn';b.style.setProperty('--c','var('+f.c+')');b.setAttribute('aria-pressed','false');
+  b.innerHTML='<i></i>'+f.id+'. '+f.t;b.onclick=function(){setFlow(curFlow===f.id?null:f.id);};f.btn=b;flowsEl.appendChild(b);
+});
+function setFlow(id){
+  curFlow=id;gS.innerHTML='';
+  F.forEach(function(f){f.btn.setAttribute('aria-pressed',f.id===id?'true':'false');});
+  if(!id){
+    edgeEls.forEach(function(e){e.el.classList.remove('on','dim');e.el.style.stroke='';});
+    Object.keys(nodeEls).forEach(function(k){nodeEls[k].classList.remove('dim');});
+    flowCard.innerHTML='<h3>選一條流程</h3><div class="meta">上方按鈕可以切換。每條流程都會在圖上標出步驟編號。</div>';return;
+  }
+  var f=F.filter(function(x){return x.id===id;})[0],col='var('+f.c+')',inFlow={};
+  f.steps.forEach(function(s){inFlow[s[0]]=1;});
+  edgeEls.forEach(function(e){
+    var on=e.f.indexOf(id)>=0;e.el.classList.toggle('on',on);e.el.classList.toggle('dim',!on);e.el.style.stroke=on?col:'';
+    if(on){inFlow[e.a]=1;inFlow[e.b]=1;}
+  });
+  Object.keys(nodeEls).forEach(function(k){nodeEls[k].classList.toggle('dim',!inFlow[k]);});
+  var seen={};
+  f.steps.forEach(function(s,i){
+    var n=N[s[0]],k=s[0],off=(seen[k]||0)*24;seen[k]=(seen[k]||0)+1;
+    var cx=n.x+n.w-6-off,cy=n.y+4;
+    el('circle',{cx:cx,cy:cy,r:10,fill:col,stroke:'var(--panel)','stroke-width':2},gS);
+    var t=el('text',{x:cx,y:cy+4,'text-anchor':'middle',fill:'#fff',class:'step'},gS);t.textContent=i+1;
+  });
+  flowCard.innerHTML='<h3 style="color:'+col+'">'+f.id+'. '+f.t+'</h3><div class="meta">'+f.sum+'</div><ol>'+
+    f.steps.map(function(s){return '<li><b>'+N[s[0]].t+'</b>：'+s[1]+'</li>';}).join('')+'</ol>';
+}
+function selectNode(id){
+  if(curNode&&nodeEls[curNode])nodeEls[curNode].classList.remove('sel');
+  curNode=id;nodeEls[id].classList.add('sel');
+  var n=N[id],col='var('+ST[n.st]+')';
+  var flows=F.filter(function(f){return f.steps.some(function(s){return s[0]===id;})||E.some(function(e){return (e[0]===id||e[1]===id)&&e[2].indexOf(f.id)>=0;});});
+  nodeCard.innerHTML='<h3>'+n.t+'<span class="badge" style="color:'+col+'">'+STL[n.st]+'</span></h3>'+
+    '<div class="meta">'+n.s+'</div>'+
+    '<p style="margin:6px 0">'+n.d+'</p>'+
+    (id==='k_pool'?'<ul>'+ACC.map(function(a){return '<li><b>'+a[0]+'</b>：'+a[1]+'（'+STL[a[2]]+'）</li>';}).join('')+'</ul>':'')+
+    '<ul><li><b>Repo：</b>'+n.repo+'</li><li><b>規格：</b>'+n.spec+'</li>'+
+    (flows.length?'<li><b>參與的流程：</b>'+flows.map(function(f){return '<a href="#" data-f="'+f.id+'">'+f.id+'. '+f.t+'</a>';}).join('、')+'</li>':'')+'</ul>'+
+    (n.b?'<p style="margin:8px 0 0;font-size:13.5px"><b>商業觀點：</b>'+n.b+'</p>':'');
+  nodeCard.querySelectorAll('a[data-f]').forEach(function(a){a.onclick=function(ev){ev.preventDefault();setFlow(+a.getAttribute('data-f'));};});
+}
+document.getElementById('resetBtn').onclick=function(){setFlow(null);if(curNode)nodeEls[curNode].classList.remove('sel');curNode=null;nodeCard.innerHTML='<h3>點一個元件</h3><div class="meta">會顯示它的職責、對應的 repo 與規格，以及目前狀態。</div>';};
+setFlow(1);
+</script>
+</body>
+</html>
