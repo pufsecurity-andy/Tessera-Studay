@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tessera Code Map</title>
+<meta name="description" content="TesseraHSM 六個開源 repo 的完整 code map：架構展開圖、模組樹、指令集、信任鏈、資安審查與商業分析。">
+<style>
+:root{
+  --bg:#f7f7f5; --panel:#ffffff; --panel2:#f0efeb; --ink:#1d1d1b; --muted:#5f5e5a; --line:#dcdad3;
+  --accent:#2f5bd3; --accent-soft:#e6ecfb;
+  --c-spec:#7a5af8; --c-rtl:#c2410c; --c-fw:#0f766e; --c-host:#2563eb; --c-int:#a21caf; --c-side:#4d7c0f;
+  --sev-h:#b42318; --sev-h-bg:#fde8e6; --sev-m:#b54708; --sev-m-bg:#fdf0e1; --sev-l:#475467; --sev-l-bg:#eef0f3; --sev-ok:#067647; --sev-ok-bg:#e3f6ec;
+  --lh-ink:#ffffff;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141413; --panel:#1c1c1a; --panel2:#24241f; --ink:#ecebe6; --muted:#a3a29b; --line:#34332e;
+    --accent:#7aa2ff; --accent-soft:#1e2a4a;
+    --c-spec:#a78bfa; --c-rtl:#fb923c; --c-fw:#2dd4bf; --c-host:#60a5fa; --c-int:#e879f9; --c-side:#a3e635;
+    --sev-h:#ff8a80; --sev-h-bg:#3a1714; --sev-m:#fdba74; --sev-m-bg:#3a2510; --sev-l:#cbd5e1; --sev-l-bg:#262a30; --sev-ok:#6ee7b7; --sev-ok-bg:#0f2e22; --lh-ink:#141413;
+  }
+}
+:root[data-theme="dark"]{
+    --bg:#141413; --panel:#1c1c1a; --panel2:#24241f; --ink:#ecebe6; --muted:#a3a29b; --line:#34332e;
+    --accent:#7aa2ff; --accent-soft:#1e2a4a;
+    --c-spec:#a78bfa; --c-rtl:#fb923c; --c-fw:#2dd4bf; --c-host:#60a5fa; --c-int:#e879f9; --c-side:#a3e635;
+    --sev-h:#ff8a80; --sev-h-bg:#3a1714; --sev-m:#fdba74; --sev-m-bg:#3a2510; --sev-l:#cbd5e1; --sev-l-bg:#262a30; --sev-ok:#6ee7b7; --sev-ok-bg:#0f2e22; --lh-ink:#141413;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,.mono{font-family:var(--mono);font-size:.88em}
+code{background:var(--panel2);padding:.1em .35em;border-radius:4px;word-break:break-word}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:20}
+header.top .wrap{display:flex;align-items:center;gap:16px;min-height:52px;flex-wrap:wrap}
+header.top b{font-size:15px;letter-spacing:.02em}
+nav.toc{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+nav.toc a{font-size:13px;color:var(--muted);padding:4px 8px;border-radius:6px}
+nav.toc a:hover{background:var(--panel2);color:var(--ink);text-decoration:none}
+.theme-btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer}
+section{padding:44px 0;border-bottom:1px solid var(--line)}
+h1{font-size:34px;line-height:1.2;margin:0 0 12px;letter-spacing:-.01em}
+h2{font-size:24px;margin:0 0 6px}
+h2 .num{color:var(--muted);font-weight:500;margin-right:8px}
+h3{font-size:17px;margin:22px 0 8px}
+.lede{color:var(--muted);max-width:820px;margin:0 0 22px}
+.hero{padding:48px 0 36px}
+.hero p.sub{font-size:17px;color:var(--muted);max-width:860px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:24px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.kpi .v{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12.5px;color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+.tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:4px;white-space:nowrap}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12.5px;background:var(--panel2)}
+td.n{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.tscroll table th:first-child,.tscroll table td:first-child{padding-left:14px}
+
+/* ===== Exploded map ===== */
+.layers{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.layer{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:stretch}
+.layer .lh{border-radius:10px;padding:10px 12px;color:var(--lh-ink);font-weight:600;font-size:13.5px;display:flex;flex-direction:column;justify-content:center}
+.layer .lh small{font-weight:400;opacity:.9;font-size:11.5px}
+.layer .boxes{display:flex;flex-wrap:wrap;gap:8px}
+.node{flex:1 1 170px;min-width:150px;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--k,var(--accent));border-radius:9px;padding:9px 11px;cursor:pointer;transition:transform .12s, box-shadow .12s;text-align:left;font:inherit;color:inherit}
+.node:hover,.node.active{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.node.active{outline:2px solid var(--k)}
+.node b{display:block;font-size:13.5px}
+.node .p{font-family:var(--mono);font-size:11px;color:var(--muted);display:block;word-break:break-all}
+.node .s{font-size:12px;color:var(--muted)}
+.arrow-row{display:grid;grid-template-columns:150px 1fr;gap:12px}
+.arrow-row div:last-child{color:var(--muted);font-size:12px;padding-left:6px;border-left:2px dashed var(--line);margin-left:20px}
+#detail{position:sticky;bottom:0;margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;box-shadow:0 -6px 20px rgba(0,0,0,.06);min-height:64px}
+#detail h4{margin:0 0 4px;font-size:15px}
+#detail .p{font-family:var(--mono);font-size:12px;color:var(--muted)}
+#detail ul{margin:6px 0 0;padding-left:18px}
+@media (max-width:720px){
+  .layer,.arrow-row{grid-template-columns:1fr}
+  .arrow-row div:first-child{display:none}
+  h1{font-size:27px}
+  header.top{position:static}
+  #detail{position:static}
+  .layer .lh{flex-direction:row;gap:8px;align-items:baseline}
+}
+section{scroll-margin-top:56px}
+
+/* ===== Trees ===== */
+details.tree{margin:0}
+details.tree summary{cursor:pointer;list-style:none;padding:3px 0;font-family:var(--mono);font-size:13px}
+details.tree summary::-webkit-details-marker{display:none}
+details.tree summary::before{content:"▸";display:inline-block;width:14px;color:var(--muted);transition:transform .15s}
+details.tree[open]>summary::before{transform:rotate(90deg)}
+.tree .kids{margin-left:14px;padding-left:10px;border-left:1px solid var(--line)}
+.leaf{font-family:var(--mono);font-size:13px;padding:2px 0 2px 14px}
+.leaf .d,.tree summary .d{font-family:var(--sans);color:var(--muted);font-size:12.5px;margin-left:8px}
+.loc{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:6px}
+.repo-card{margin-bottom:16px}
+.repo-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:6px}
+.repo-head h3{margin:0}
+.bar{height:8px;border-radius:4px;background:var(--panel2);overflow:hidden;display:flex;margin:8px 0 2px}
+.bar i{display:block;height:100%}
+
+/* ===== Findings ===== */
+.sev{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:5px;letter-spacing:.03em;white-space:nowrap}
+.sev.h{color:var(--sev-h);background:var(--sev-h-bg)}
+.sev.m{color:var(--sev-m);background:var(--sev-m-bg)}
+.sev.l{color:var(--sev-l);background:var(--sev-l-bg)}
+.sev.ok{color:var(--sev-ok);background:var(--sev-ok-bg)}
+.finding{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px}
+.finding .fh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.finding .fh b{font-size:15px}
+.finding .ev{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:4px;word-break:break-all}
+.finding p{margin:6px 0}
+.finding .fix{font-size:13.5px}
+.finding .fix::before{content:"建議 → ";font-weight:600;color:var(--ink)}
+svg text{font-family:var(--sans)}
+.svgbox{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;overflow-x:auto}
+.svgbox svg{display:block;min-width:720px;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);margin:10px 0}
+.pill-row{display:flex;flex-wrap:wrap;gap:6px}
+.swot{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.swot .card h4{margin:0 0 6px}
+.swot ul{margin:0;padding-left:18px}
+@media (max-width:720px){.swot{grid-template-columns:1fr}}
+.foot{color:var(--muted);font-size:12.5px;padding:28px 0 60px}
+ul.tight{margin:6px 0;padding-left:20px}
+ul.tight li{margin:2px 0}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <b>Tessera Code Map</b>
+  <nav class="toc">
+    <a href="#map">展開圖</a><a href="#flow">請求路徑</a><a href="#repos">模組樹</a><a href="#cmds">指令集</a><a href="#trust">信任鏈</a><a href="#sec">資安審查</a><a href="#biz">商業分析</a><a href="#next">下一步</a><a href="system-map.html" style="color:var(--accent);font-weight:600">System Map →</a>
+  </nav>
+  <a class="theme-btn" href="../index.html" style="text-decoration:none">首頁</a>
+  <button class="theme-btn" id="themeBtn" type="button">主題</button>
+</div></header>
+
+<!-- ================= HERO ================= -->
+<div class="wrap hero">
+  <div class="tag">快照 2026-10-28</div><div class="tag">TesseraHSM · 6 repos</div><div class="tag">規格 v0.5.0</div>
+  <h1>Tessera：把 Azure Integrated HSM 開源成一個「伺服器內建 HSM」的產業標準</h1>
+  <p class="sub">Tessera 是 Microsoft 主導、Marvell 和 Oracle 共同署名的開源 HSM 專案，透過 OCP 推動。它延續 Caliptra 的路線：規格、晶片 RTL、韌體、主機 SDK 全部公開，目標是讓每台伺服器、每個 TEE、每台 VM 旁邊都有一顆 FIPS 140-3 Level 3 的 HSM，金鑰不必離開 HSM 邊界也能跨廠商、跨雲移動。</p>
+  <div class="kpis">
+    <div class="kpi"><div class="v">6</div><div class="l">公開 repo（規格／RTL／韌體＋SDK／驅動／sidecar／unikernel）</div></div>
+    <div class="kpi"><div class="v">~441k</div><div class="l">Rust 行數（不含 ~324k 行測試向量）</div></div>
+    <div class="kpi"><div class="v">~98k</div><div class="l">SystemVerilog RTL 行數，共 12 個加速器 IP</div></div>
+    <div class="kpi"><div class="v">43</div><div class="l">TBOR DDI 指令（規格只列了 37 個）</div></div>
+    <div class="kpi"><div class="v">3,640</div><div class="l"><code>#[test]</code> 單元測試，加 24 個 fuzz target</div></div>
+    <div class="kpi"><div class="v">FIPS L3</div><div class="l">認證目標：全晶片邊界</div></div>
+  </div>
+  <div class="callout" style="margin-top:22px"><b>一句話結論：</b>目前<b>軟體已經相當成熟，晶片還是半成品</b>。韌體、SDK、模擬器、OpenSSL 整合都能跑；RTL 只有密碼加速器，而且 12 個 IP 裡有 11 個是直接從 Caliptra 搬過來改名的。真正難做的部分還沒公開：key mover、pool manager、PCIe Gen6 IDE/TDISP 前端、GSRAM key vault、防竄改。這代表兩件事：一是商業上的進場窗口還開著；二是現在能拿去做安全宣稱的東西，大部分還停在模擬器。</div>
+</div>
+
+<!-- ================= EXPLODED MAP ================= -->
+<section id="map"><div class="wrap">
+  <h2><span class="num">01</span>Code Map 展開圖</h2>
+  <p class="lede">整個系統拆成七層，從最上面的規格一路往下到應用整合。<b>點任一個方塊</b>，下方會顯示它的路徑、職責和重點檔案。顏色代表所屬 repo 的類型。</p>
+
+  <div class="layers" id="layers"></div>
+  <div id="detail"><h4>點上面的方塊看細節</h4><div class="p">—</div></div>
+</div></section>
+
+<!-- ================= REQUEST FLOW ================= -->
+<section id="flow"><div class="wrap">
+  <h2><span class="num">02</span>一筆簽章請求怎麼走完全程</h2>
+  <p class="lede">以 nginx 用 TLS 私鑰簽章為例。這條路徑看得出 Tessera 的核心設計：<b>金鑰平常以「遮罩後的 blob」（masked key）放在主機端，每次使用時才在硬體內解開</b>（KEY-OFF-1..11）。</p>
+  <div class="svgbox">
+  <svg viewBox="0 0 1120 470" role="img" aria-label="請求流程圖">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+    </defs>
+    <g style="color:var(--muted)" stroke="currentColor" stroke-width="1.5" fill="none" marker-end="url(#ah)">
+      <path d="M150 70 H205"/><path d="M355 70 H410"/><path d="M560 70 H615"/><path d="M765 70 H820"/>
+      <path d="M895 105 V165"/>
+      <path d="M820 200 H765"/><path d="M615 200 H560"/><path d="M410 200 H355"/><path d="M205 200 H150"/>
+      <path d="M75 235 V295"/>
+      <path d="M150 330 H205"/><path d="M355 330 H410"/><path d="M560 330 H615"/><path d="M765 330 H820"/>
+    </g>
+    <g font-size="13">
+      <!-- row 1 host -->
+      <rect x="10" y="40" width="140" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-int)"/>
+      <text x="80" y="66" text-anchor="middle" fill="var(--ink)" font-weight="600">nginx / App</text>
+      <text x="80" y="86" text-anchor="middle" fill="var(--muted)" font-size="11">EVP_PKEY_sign()</text>
+      <rect x="205" y="40" width="150" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-int)"/>
+      <text x="280" y="66" text-anchor="middle" fill="var(--ink)" font-weight="600">OpenSSL Provider</text>
+      <text x="280" y="86" text-anchor="middle" fill="var(--muted)" font-size="11">plugins/ossl_prov (C)</text>
+      <rect x="410" y="40" width="150" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-host)"/>
+      <text x="485" y="66" text-anchor="middle" fill="var(--ink)" font-weight="600">tsra_api</text>
+      <text x="485" y="86" text-anchor="middle" fill="var(--muted)" font-size="11">api/lib · session · key</text>
+      <rect x="615" y="40" width="150" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-host)"/>
+      <text x="690" y="66" text-anchor="middle" fill="var(--ink)" font-weight="600">TBOR encode</text>
+      <text x="690" y="86" text-anchor="middle" fill="var(--muted)" font-size="11">ddi/tbor · EccSign 0x18</text>
+      <rect x="820" y="40" width="150" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-host)"/>
+      <text x="895" y="66" text-anchor="middle" fill="var(--ink)" font-weight="600">ddi_nix</text>
+      <text x="895" y="86" text-anchor="middle" fill="var(--muted)" font-size="11">ioctl → /dev/tsra*</text>
+      <!-- row 2 kernel / pcie (right to left) -->
+      <rect x="820" y="168" width="150" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-host)"/>
+      <text x="895" y="194" text-anchor="middle" fill="var(--ink)" font-weight="600">tsra.ko</text>
+      <text x="895" y="214" text-anchor="middle" fill="var(--muted)" font-size="11">SQE 寫入 · pin 使用者頁</text>
+      <rect x="615" y="168" width="150" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-rtl)"/>
+      <text x="690" y="194" text-anchor="middle" fill="var(--ink)" font-weight="600">PCIe Gen6 VF</text>
+      <text x="690" y="214" text-anchor="middle" fill="var(--muted)" font-size="11">NVMe-like SQ/CQ · IDE</text>
+      <rect x="410" y="168" width="150" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-fw)"/>
+      <text x="485" y="194" text-anchor="middle" fill="var(--ink)" font-weight="600">IIC driver → poll_io</text>
+      <text x="485" y="214" text-anchor="middle" fill="var(--muted)" font-size="11">fw/plat/uno · Embassy</text>
+      <rect x="205" y="168" width="150" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-fw)"/>
+      <text x="280" y="194" text-anchor="middle" fill="var(--ink)" font-weight="600">GDMA in</text>
+      <text x="280" y="214" text-anchor="middle" fill="var(--muted)" font-size="11">copy_mem_from_host</text>
+      <rect x="10" y="168" width="140" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-fw)"/>
+      <text x="80" y="194" text-anchor="middle" fill="var(--ink)" font-weight="600">TBOR dispatch</text>
+      <text x="80" y="214" text-anchor="middle" fill="var(--muted)" font-size="11">session / PSK gate</text>
+      <!-- row 3 -->
+      <rect x="10" y="298" width="140" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-fw)"/>
+      <text x="80" y="324" text-anchor="middle" fill="var(--ink)" font-weight="600">ecc_sign.rs</text>
+      <text x="80" y="344" text-anchor="middle" fill="var(--muted)" font-size="11">fw/core/lib/ddi/tbor</text>
+      <rect x="205" y="298" width="150" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-fw)"/>
+      <text x="280" y="324" text-anchor="middle" fill="var(--ink)" font-weight="600">key-masking</text>
+      <text x="280" y="344" text-anchor="middle" fill="var(--muted)" font-size="11">AES-GCM 解遮罩</text>
+      <rect x="410" y="298" width="150" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-rtl)"/>
+      <text x="485" y="324" text-anchor="middle" fill="var(--ink)" font-weight="600">UPKA / ECC 引擎</text>
+      <text x="485" y="344" text-anchor="middle" fill="var(--muted)" font-size="11">tessera_ecc_top.sv</text>
+      <rect x="615" y="298" width="150" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-fw)"/>
+      <text x="690" y="324" text-anchor="middle" fill="var(--ink)" font-weight="600">GDMA out → CQE</text>
+      <text x="690" y="344" text-anchor="middle" fill="var(--muted)" font-size="11">complete_io · MSI-X</text>
+      <rect x="820" y="298" width="150" height="62" rx="9" fill="var(--panel2)" stroke="var(--c-host)"/>
+      <text x="895" y="324" text-anchor="middle" fill="var(--ink)" font-weight="600">簽章回到 App</text>
+      <text x="895" y="344" text-anchor="middle" fill="var(--muted)" font-size="11">TLS handshake 繼續</text>
+      <!-- lane labels -->
+      <text x="1000" y="76" fill="var(--muted)" font-size="12">使用者空間</text>
+      <text x="1000" y="204" fill="var(--muted)" font-size="12">核心 / PCIe / 韌體</text>
+      <text x="1000" y="334" fill="var(--muted)" font-size="12">HSM 內部</text>
+      <text x="10" y="410" fill="var(--muted)" font-size="12">替換傳輸層：ddi_nix（Linux 實機）· ddi_win（Windows）· ddi_emu（同行程跑韌體）· ddi_mock / mbor sim（舊版模擬器）· ddi_sock（vsock → sidecar）</text>
+      <text x="10" y="432" fill="var(--muted)" font-size="12">替換平台層：fw/plat/uno（Cortex-M 實機，no_std）· fw/plat/std（主機原生 + tokio，模擬器／sidecar 都用這層）</text>
+      <text x="10" y="454" fill="var(--sev-h)" font-size="12">⚠ sidecar 路徑底下跑的是 std PAL，裝置秘密是寫死在程式裡的，見資安審查 H-1</text>
+    </g>
+  </svg>
+  </div>
+</div></section>
+
+<!-- ================= REPO TREES ================= -->
+<section id="repos"><div class="wrap">
+  <h2><span class="num">03</span>六個 repo 的模組樹</h2>
+  <p class="lede">每個節點都可以展開。行數是本次 shallow clone 用 <code>wc -l</code> 算的，只能看出量級，不代表品質。</p>
+  <div id="repoTrees"></div>
+</div></section>
+
+<!-- ================= COMMANDS ================= -->
+<section id="cmds"><div class="wrap">
+  <h2><span class="num">04</span>TBOR DDI 指令集地圖</h2>
+  <p class="lede">TBOR 是主機和 HSM 之間的二進位協定：4 byte header + 1–32 個 TOC entry + 資料區。舊版 Azure Integrated HSM 用的 MBOR 協定也還留在程式碼裡（<code>fw/core/lib/src/ddi/mbor</code>），所以目前<b>兩套協定並存</b>。</p>
+  <div class="legend"><span><span class="dot" style="background:var(--c-fw)"></span>規格與程式碼一致</span><span><span class="dot" style="background:var(--sev-m)"></span>程式碼有，規格 v0.4 沒寫</span><span><span class="dot" style="background:var(--muted)"></span>NoSession（不需要 session）</span></div>
+  <div class="tscroll"><table id="cmdTable"><thead><tr><th>Opcode</th><th>指令</th><th>群組</th><th>Session</th><th>誰能叫</th><th>用途</th></tr></thead><tbody></tbody></table></div>
+</div></section>
+
+<!-- ================= TRUST CHAIN ================= -->
+<section id="trust"><div class="wrap">
+  <h2><span class="num">05</span>信任鏈與金鑰階層</h2>
+  <p class="lede">Tessera 用三條憑證鏈夾出一個分區：製造商鏈證明「這是真的 Tessera」，Tessera Owner 鏈證明「這顆屬於哪個服務或企業」，Partition Owner 鏈證明「這個分區屬於誰」。三條鏈<b>必須全部驗證通過</b>。</p>
+  <div class="svgbox">
+  <svg viewBox="0 0 1120 430" role="img" aria-label="信任鏈">
+    <defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>
+    <g font-size="13">
+      <text x="20" y="30" fill="var(--muted)" font-size="12">製造商 / 營運者（Caliptra DICE）</text>
+      <text x="20" y="175" fill="var(--muted)" font-size="12">Tessera Owner（裝置層）</text>
+      <text x="20" y="310" fill="var(--muted)" font-size="12">Partition Owner（分區層）</text>
+      <g style="color:var(--muted)" stroke="currentColor" stroke-width="1.5" fill="none" marker-end="url(#ah2)">
+        <path d="M175 70 H225"/><path d="M370 70 H420"/><path d="M565 70 H615"/>
+        <path d="M690 100 V200"/>
+        <path d="M175 230 H615"/>
+        <path d="M765 230 H815"/>
+        <path d="M890 260 V340"/>
+        <path d="M565 370 H815"/>
+        <path d="M497 100 C 497 150, 497 150, 497 150 L 497 150"/>
+      </g>
+      <rect x="20" y="40" width="155" height="60" rx="9" fill="var(--panel2)" stroke="var(--c-spec)"/><text x="97" y="66" text-anchor="middle" fill="var(--ink)" font-weight="600">Manufacturer CA</text><text x="97" y="86" text-anchor="middle" fill="var(--muted)" font-size="11">廠商離線 CA</text>
+      <rect x="225" y="40" width="145" height="60" rx="9" fill="var(--panel2)" stroke="var(--c-spec)"/><text x="297" y="66" text-anchor="middle" fill="var(--ink)" font-weight="600">IDevID</text><text x="297" y="86" text-anchor="middle" fill="var(--muted)" font-size="11">802.1AR · IDevK</text>
+      <rect x="420" y="40" width="145" height="60" rx="9" fill="var(--panel2)" stroke="var(--c-spec)"/><text x="492" y="66" text-anchor="middle" fill="var(--ink)" font-weight="600">LDevID ⇄ DARC</text><text x="492" y="86" text-anchor="middle" fill="var(--muted)" font-size="11">營運者背書的根</text>
+      <rect x="615" y="40" width="150" height="60" rx="9" fill="var(--panel2)" stroke="var(--c-fw)"/><text x="690" y="66" text-anchor="middle" fill="var(--ink)" font-weight="600">FMC Alias</text><text x="690" y="86" text-anchor="middle" fill="var(--muted)" font-size="11">帶韌體量測值</text>
+      <rect x="20" y="200" width="155" height="60" rx="9" fill="var(--panel2)" stroke="var(--c-host)"/><text x="97" y="226" text-anchor="middle" fill="var(--ink)" font-weight="600">AOTA</text><text x="97" y="246" text-anchor="middle" fill="var(--muted)" font-size="11">Owner 的 CA</text>
+      <rect x="615" y="200" width="150" height="60" rx="9" fill="var(--panel2)" stroke="var(--c-host)"/><text x="690" y="226" text-anchor="middle" fill="var(--ink)" font-weight="600">AOAC</text><text x="690" y="246" text-anchor="middle" fill="var(--muted)" font-size="11">雙簽：廠商＋Owner（OCP DOT）</text>
+      <rect x="815" y="200" width="150" height="60" rx="9" fill="var(--panel2)" stroke="var(--c-host)"/><text x="890" y="226" text-anchor="middle" fill="var(--ink)" font-weight="600">PAC</text><text x="890" y="246" text-anchor="middle" fill="var(--muted)" font-size="11">對 PAK 的硬體背書</text>
+      <rect x="420" y="340" width="145" height="60" rx="9" fill="var(--panel2)" stroke="var(--c-int)"/><text x="492" y="366" text-anchor="middle" fill="var(--ink)" font-weight="600">POTA</text><text x="492" y="386" text-anchor="middle" fill="var(--muted)" font-size="11">分區擁有者 CA</text>
+      <rect x="815" y="340" width="150" height="60" rx="9" fill="var(--panel2)" stroke="var(--c-int)"/><text x="890" y="366" text-anchor="middle" fill="var(--ink)" font-weight="600">PAK + POAC</text><text x="890" y="386" text-anchor="middle" fill="var(--muted)" font-size="11">分區身分，壽命綁分區</text>
+      <text x="990" y="236" fill="var(--muted)" font-size="11.5">三鏈全過</text><text x="990" y="252" fill="var(--muted)" font-size="11.5">才算擁有</text>
+    </g>
+  </svg>
+  </div>
+  <div class="grid2" style="margin-top:14px">
+    <div class="card">
+      <h3 style="margin-top:0">金鑰家族</h3>
+      <div class="tscroll" style="border:0"><table>
+        <tr><th>金鑰</th><th>來源與用途</th></tr>
+        <tr><td><b>BKS1</b> Device Class Seed</td><td>同一型號、同一 SVN 的裝置共用，用來推導 Backup Key</td></tr>
+        <tr><td><b>BKS2</b> Owner Seed</td><td>同一個 Owner 底下的裝置共用，備份只能還原到同 Owner 的裝置</td></tr>
+        <tr><td><b>BKS3</b> Partition Owner Seed</td><td>同一個 Security Domain 共用</td></tr>
+        <tr><td><b>BK</b> = KDF(BKS1‖BKS2‖BKS3, 信任錨)</td><td>遮罩 Masking Key，產生 BMK（備份用的 MK）</td></tr>
+        <tr><td><b>MK / SDMK</b></td><td>分區（或 Security Domain）的 Masking Key，所有 masked key blob 都在它底下</td></tr>
+        <tr><td><b>Session sealing key</b></td><td>AES-256-GCM，由 DRBG＋VM nonce＋裝置身分推導；VM 斷線或 session 關閉就清除</td></tr>
+        <tr><td><b>TMK</b>（DARC）</td><td>一次性 AES-256 金鑰，跨廠商搬一把 key 時，用 HPKE-Auth（P-384）封裝</td></tr>
+      </table></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">三種「搬金鑰」的協定</h3>
+      <ul class="tight">
+        <li><b>Masking Key Transfer</b>：在同一個 POTA 底下複製分區 MK，等於擴大 Security Domain。用於 HA 和水平擴展。</li>
+        <li><b>DARC</b>：<i>跨廠商</i>只搬<b>一把</b>金鑰，不擴大 domain。目前只支援 EC 私鑰，PQC/hybrid 的 HPKE profile 還是 Open Item。</li>
+        <li><b>SKR / Key Import</b>：相容舊流程，需要 <code>CKA_EXTRACTABLE</code>。這正是規格自己列出來要淘汰的反模式。</li>
+      </ul>
+      <div class="callout" style="margin:10px 0 0"><b>商業意義：</b>DARC 是整套規格裡最有「標準價值」的部分。如果 Thales、Entrust、Utimaco 或各家雲端 HSM 都實作 DARC，企業就能向監管單位（DORA、OSFI、PCI-HSM）證明「隨時可以退出某家雲」，而且金鑰全程留在 HSM 邊界內。</div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ================= SECURITY ================= -->
+<section id="sec"><div class="wrap">
+  <h2><span class="num">06</span>資安專家審查</h2>
+  <p class="lede">這是讀程式碼加規格後的<b>靜態審查</b>，沒有跑過、也沒做 exploit。每一條都附上證據位置（commit 已固定），等級是依照「如果照目前 repo 部署」來評。</p>
+
+  <div class="finding">
+    <div class="fh"><span class="sev h">H-1</span><b>std PAL 把 UDS 和 BKS 種子寫死在原始碼裡，而 SEV-SNP sidecar 跑的就是這個 PAL</b></div>
+    <div class="ev"><a href="https://github.com/TesseraHSM/tessera-sw/blob/32812128eab66c6701a2d9f33dbed0022ef8f30d/fw/plat/std/pal/src/seed.rs#L27">tessera-sw/fw/plat/std/pal/src/seed.rs:27</a>（STD_MFGR_SEED_ROW0、STD_OWNER_SEED_ROW0、STD_FW_SEED48、STD_UDS）· <a href="https://github.com/TesseraHSM/tessera-sw/blob/32812128eab66c6701a2d9f33dbed0022ef8f30d/examples/sock/ddi_sock_server/src/main.rs#L26">ddi_sock_server/src/main.rs:26</a> 用的是 <code>StdHsm</code></div>
+    <p>sidecar-scripts 提供了 <code>mshv-unikraft-snp</code> 這個 AMD SEV-SNP 版本，看起來像是「還沒有實體晶片前，先用機密 VM 當 HSM」。可是它裡面的 HSM 核心用的是 std PAL，裝置唯一秘密（UDS）、BKS1、BKS2 全都是 repo 裡公開的常數。註解還寫著這些值取自「先前的參考韌體」，目的是讓 blob 和實機<i>位元相容</i>。結果是：任何人都能重算這個環境推導出的 Masking Key 和 Backup Key。<b>SNP 只擋得住 host 讀記憶體，擋不住「秘密本來就是公開的」。</b></p>
+    <p class="fix">在 std PAL 加一道 build-time 防線：production feature 下禁止使用寫死的種子，改成從 SNP 的 <code>MSG_KEY_REQ</code>（VCEK 推導的 sealing key）或 vTPM 取得 UDS。另外，要確認「實機 BKS1 和模擬器相同」只發生在開發用 SVN，正式 SVN 一定要有獨立的種子列。</p>
+  </div>
+
+  <div class="finding">
+    <div class="fh"><span class="sev h">H-2</span><b>vsock DDI 傳輸完全沒有認證；如果 sidecar 被當成產品用，等於開放的 HSM</b></div>
+    <div class="ev"><a href="https://github.com/TesseraHSM/tessera-sw/blob/32812128eab66c6701a2d9f33dbed0022ef8f30d/examples/sock/ddi_sock_server/src/main.rs#L9">ddi_sock_server/src/main.rs:9</a> "This unauthenticated test transport is for trusted, isolated environments"</div>
+    <p>作者在註解裡寫得很清楚，這是測試用的傳輸層。但 sidecar repo 的 SNP 建置流程和產品化包裝（多種 variant、MSHV 平台、SNP 隔離）會讓人以為它是可以部署的東西。任何能連到 vsock CID:1234 的行程都能下 DDI 指令；唯一的門檻只剩 session PSK（見 M-1）。</p>
+    <p class="fix">sidecar 的 README 和建置腳本要明確標示 <i>non-production</i>。如果要產品化，至少要做到：SPDM-over-vsock 或 attested TLS（以 SNP report 作為身分），並把 SNP measurement 綁進 AOAC/FMC Alias 鏈。</p>
+  </div>
+
+  <div class="finding">
+    <div class="fh"><span class="sev m">M-1</span><b>預設 PSK 是公開的，第一個連上的人就能拿走分區（TOFU 搶占）</b></div>
+    <div class="ev">Command Spec §Default-PSK gate · <a href="https://github.com/TesseraHSM/tessera-sw/blob/32812128eab66c6701a2d9f33dbed0022ef8f30d/fw/core/lib/src/ddi/tbor/mod.rs#L862">fw/core/lib/src/ddi/tbor/mod.rs:862</a> <code>allowed_with_default_psk</code></div>
+    <p>預設 PSK 字串（<code>TESSERAHSM-DEFAULT-CO-PSK-v1----</code>）寫在規格裡。gate 的設計本身是對的：<i>safe-by-default</i>，新加的 opcode 會自動被擋，只開放 <code>PskChange</code> 和 <code>SessionClose</code>，而且有單元測試鎖住。問題在於 <b>bootstrap 是「先到先贏」</b>：誰先送出 <code>PskChange</code>，誰就擁有 CO 角色。如果 VF 指派給 VM 之後、合法 owner 輪替 PSK 之前，有其他行程或惡意 guest 先動手，就能搶下分區。</p>
+    <p class="fix">把第一次 <code>PskChange</code> 綁到 POTA 簽章（或綁到 TDISP 已鎖定的 TDI），讓 PSK 輪替本身也要有授權。或者至少在 PartInfo 裡回報「PSK 已被輪替」的時間點和計數，讓 owner 能偵測自己是不是晚了一步。</p>
+  </div>
+
+  <div class="finding">
+    <div class="fh"><span class="sev m">M-2</span><b>RSA 引擎：效能路徑（CRT）不能開 exponent blinding，預設設定也是關的；私鑰指數經由匯流排傳入，韌體看得到</b></div>
+    <div class="ev"><a href="https://github.com/TesseraHSM/tessera-rtl/blob/fc5e739d481e66f58c381801fa6410b79baad1ec/src/rsa_4k_3k_2k/rtl/tessera_rsa_ctrl.sv#L265">tessera_rsa_ctrl.sv:265</a> · <a href="https://github.com/TesseraHSM/tessera-rtl/blob/fc5e739d481e66f58c381801fa6410b79baad1ec/src/rsa_4k_3k_2k/rtl/tessera_rsa_params_pkg.sv#L79">tessera_rsa_params_pkg.sv:79</a>（BLIND_BITS 預設 0）· <a href="https://github.com/TesseraHSM/tessera-rtl/blob/fc5e739d481e66f58c381801fa6410b79baad1ec/src/rsa_4k_3k_2k/rtl/tessera_rsa_top.sv#L22">tessera_rsa_top.sv:22</a> "No Key Vault interface… Private exponents arrive over the bus"</div>
+    <p>RSA 是 12 個 IP 裡<b>唯一不是 Caliptra 來源</b>的區塊（沒有 revinfo.yml），也就是說它沒有經過 Caliptra 社群的審查。好消息是它有做：固定長度的 ladder、常數時間查表、強制的 Bellcore 驗證（防 CRT 故障注入）。壞消息有兩個：(1) 要達到 PERF-1 規格的 100k ops/s 就必須開 CRT，而 CRT 和 blinding 在 RTL 裡是互斥的；(2) 沒有 Key Vault 介面，私鑰由 CPU 寫進 <code>RSA_D</code>，這和 CRD 的 KEY-MGT-6「韌體不應看到明文金鑰」相衝突，也會讓 FIPS L3 的邊界論述變得困難。</p>
+    <p class="fix">讓 key mover 直接把 RSA 私鑰送進引擎（不經過 CPU），並擴大 DP/DQ 的寬度以支援 CRT blinding（dp + k·(p−1)）。在 tape-out 前要安排獨立的 SCA/FI 實驗室評估，例如 TVLA 和雷射故障注入。</p>
+  </div>
+
+  <div class="finding">
+    <div class="fh"><span class="sev m">M-3</span><b>晶片真正的安全邊界還沒開源</b></div>
+    <div class="ev">tessera-rtl/src/ 只有 12 個加速器；CRD 要求的 key mover、pool manager、host memory hasher、GSRAM KV、PCIe IDE/TDISP、tamper 都還沒出現</div>
+    <p>加速器之所以安全，是因為「金鑰怎麼進來、誰能讀」，而這部分全在還沒公開的 SoC 整合層。換句話說，<b>現在沒辦法驗證 Tessera 最核心的承諾</b>：「解遮罩只在硬體狀態機內完成，uC 只能單向寫入」。另外，Uno 韌體目標（Cortex-M，<code>fw/plat/uno</code>）看起來是第一代 Azure Integrated HSM 的晶片，不是 Tessera 規格裡的 4×M7/E6 + Gen6 架構。就連加速器本身也有缺口：ECC 引擎只看得到 P-384，CRD 要求的 P-256、P-256K、P-521 都還沒有硬體實作。</p>
+    <p class="fix">在 OCP 推動「SoC integration RTL + 安全架構文件」的公開時程；在那之前，任何商業材料都應該把 Tessera 定位成「參考架構」，不要說成「已驗證的晶片」。</p>
+  </div>
+
+  <div class="finding">
+    <div class="fh"><span class="sev m">M-4</span><b>Linux 驅動：device reset 的 ioctl 沒有檢查權限，程式裡還留著 debug 記錄</b></div>
+    <div class="ev"><a href="https://github.com/TesseraHSM/tessera-linux-driver/blob/a43d3135d92d7780bdb97334de25044bdd07c5d3/tsra_hsm_dev.c#L2146">tsra_hsm_dev.c:2146</a> <code>TSRA_IOCTL_RESET_DEVICE</code> · <a href="https://github.com/TesseraHSM/tessera-linux-driver/blob/a43d3135d92d7780bdb97334de25044bdd07c5d3/tsra_hsm_dev.c#L2104">tsra_hsm_dev.c:2104</a> "[REMOVE-ME]"</div>
+    <p>整個驅動裡沒有任何 <code>capable()</code> 檢查，所以能開 device node 的行程都能 reset 裝置。在 VM 裡面，這代表其他 user 可以讓 HSM 的服務中斷（DoS）；在 PF 端影響會更大。驅動有 23 處 <code>copy_from_user</code>，大致都有檢查 <code>szioctldata</code>；不過 <code>FOLL_PIN</code> 的使用者頁 DMA 路徑（tsra_dma_io.c）值得找 kernel 專家再看一次。</p>
+    <p class="fix">reset 和管理類 ioctl 要求 <code>CAP_SYS_ADMIN</code>，並把 udev 規則加進 repo；拿掉 [REMOVE-ME] 記錄；送 upstream 前跑 syzkaller。</p>
+  </div>
+
+  <div class="finding">
+    <div class="fh"><span class="sev l">L-1</span><b>規格和程式碼不同步，舊版 MBOR 協定仍然啟用</b></div>
+    <p>程式碼已經有 ML-DSA 和 ML-KEM 的 6 個指令（0x26–0x2B），但 Command Spec v0.4 的 opcode 表只寫到 0x25。MBOR 和 TBOR 兩套解析器並存，代表兩倍的解析攻擊面；24 個 fuzz target 都放在 <code>fuzz/fuzz_targets/ddi/tbor/</code> 底下，MBOR 解析器有沒有被 fuzz 覆蓋，還需要再確認。</p>
+    <p class="fix">用 <code>docs/tbor-ddi/commands/*.md</code> 自動產生規格的 opcode 表；訂出 MBOR 的淘汰時程，並在 PartInfo 回報目前啟用了哪些協定。</p>
+  </div>
+
+  <div class="finding">
+    <div class="fh"><span class="sev l">L-2</span><b>OpenSSL Provider 還沒有 PQC，也沒有 PKCS#11</b></div>
+    <p>Provider 目前只支援 RSA、EC、ECDH、AES-GCM/XTS、SHA-2、HKDF。可是韌體已經有 ML-DSA 和 ML-KEM，而 OpenSSL 3.5 原生就支援 ML-KEM/ML-DSA。另外整個專案沒有 PKCS#11 介面，而那是傳統 HSM 生態（Java、資料庫 TDE、CA 軟體）唯一的共通語言。</p>
+    <p class="fix">補上 provider 的 PQC keymgmt、signature、kem；PKCS#11 是一個明確的商業缺口（見 07）。</p>
+  </div>
+
+  <h3>做得好的地方（之後寫產品材料可以引用）</h3>
+  <div class="grid3">
+    <div class="card"><span class="sev ok">OK</span> <b>Rust 預設禁止 <code>unsafe</code></b><p style="margin:6px 0 0;font-size:13.5px;color:var(--muted)">workspace 層級設定 <code>unsafe_code = "deny"</code>，需要 unsafe 的模組必須個別開啟。韌體核心是 no_std + Embassy async。</p></div>
+    <div class="card"><span class="sev ok">OK</span> <b>Default-PSK gate 是白名單制</b><p style="margin:6px 0 0;font-size:13.5px;color:var(--muted)">之後新增的 opcode 會自動被擋，有測試鎖住；未知 opcode 在 gate 之前就先拒絕，不會從錯誤碼洩漏 opcode 是否存在。</p></div>
+    <div class="card"><span class="sev ok">OK</span> <b>RTL 來源可追溯</b><p style="margin:6px 0 0;font-size:13.5px;color:var(--muted)">CI 會把每個 vendored 區塊和 Caliptra upstream 的指定 commit 做 round-trip diff，證明改動「只有改名」。這是很少見的供應鏈紀律。</p></div>
+    <div class="card"><span class="sev ok">OK</span> <b>回應帶 FIPS_APPROVED 旗標</b><p style="margin:6px 0 0;font-size:13.5px;color:var(--muted)">每個回應都標示這次運算是否只用了 approved 演算法，對 FIPS 稽核很友善。</p></div>
+    <div class="card"><span class="sev ok">OK</span> <b>Fuzz 加上一致性測試</b><p style="margin:6px 0 0;font-size:13.5px;color:var(--muted)">24 個 TBOR fuzz target、3,640 個單元測試；同一份 C++ 測試可以跑在 mock、emu 和實機上。</p></div>
+    <div class="card"><span class="sev ok">OK</span> <b>交易式 undo log</b><p style="margin:6px 0 0;font-size:13.5px;color:var(--muted)"><code>fw/core/undo</code> 讓多步驟的狀態變更在中途失敗時可以回滾，對斷電和韌性情境很重要。</p></div>
+  </div>
+</div></section>
+
+<!-- ================= BUSINESS ================= -->
+<section id="biz"><div class="wrap">
+  <h2><span class="num">07</span>用做生意的角度看 Tessera</h2>
+  <p class="lede">先講結論：Tessera 是 hyperscaler 把「HSM」從一個<b>設備生意</b>，改寫成一個<b>晶片標準和生態系生意</b>。Caliptra 已經讓 Root of Trust 變成大家共用的公共財，Tessera 想對 HSM 做同一件事。</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">Microsoft 為什麼要開源？</h3>
+      <ul class="tight">
+        <li><b>壓低自家成本：</b>Azure 每台伺服器都要內建 HSM。開源加上多家供應商，就能讓晶片價格競爭，也避免被單一 HSM 廠商綁住。</li>
+        <li><b>讓自己的做法變成標準：</b>透過 OCP 定義 DARC 和 Masking Key Transfer，讓 Azure 的金鑰模型成為業界預設，其他雲和 HSM 廠商就得跟著相容。</li>
+        <li><b>搶監管紅利：</b>DORA、主權雲、PQC 遷移時程都在逼企業證明「可以退出、金鑰從不外露」。開放標準是最有說服力的稽核證據。</li>
+        <li><b>Caliptra 的成功模式：</b>參與者（Marvell、Oracle）願意一起署名，就代表供應鏈已經開始對齊。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">誰的生意會被影響？</h3>
+      <div class="tscroll" style="border:0"><table>
+        <tr><th>角色</th><th>影響</th></tr>
+        <tr><td>傳統網路型 HSM（Thales Luna、Entrust nShield、Utimaco）</td><td><span class="sev m">壓力</span> 中低階的「延遲敏感」工作負載會被伺服器內建 HSM 吃掉；但它們可以變成 DARC 的「來源 HSM」，轉型做金鑰的根</td></tr>
+        <tr><td>雲端 HSM（CloudHSM、Cloud HSM、Managed HSM）</td><td><span class="sev l">兩面</span> 企業有了跨雲搬金鑰的標準，雲的鎖定效果會變弱</td></tr>
+        <tr><td>PCIe HSM 卡和晶片（Marvell LiquidSecurity 等）</td><td><span class="sev ok">機會</span> 直接是 Tessera 晶片的候選供應商（Marvell 已經在作者名單上）</td></tr>
+        <tr><td>安全 IP 廠商（RoT、PUF、TRNG、PQC IP）</td><td><span class="sev ok">機會</span> 規格把 Caliptra 2.2 寫死成 RoT，但 entropy、OTP、tamper、key storage 都還可以替換</td></tr>
+        <tr><td>FIPS 和 CC 實驗室、SCA 實驗室</td><td><span class="sev ok">機會</span> 每一家實作的廠商都要各自認證</td></tr>
+      </table></div>
+    </div>
+  </div>
+
+  <h3>價值鏈：錢會流向哪裡</h3>
+  <div class="tscroll"><table>
+    <thead><tr><th>層級</th><th>開源後還剩什麼可以賣</th><th>對應的 repo</th><th>進入門檻</th><th>現在的成熟度</th></tr></thead>
+    <tbody>
+      <tr><td>規格和標準</td><td>主導權、互通認證（「Tessera-conformant」標章）</td><td>tessera-specs</td><td>高（需要 OCP 席位）</td><td>v0.5 草案</td></tr>
+      <tr><td>晶片 IP</td><td>SoC 整合、PCIe Gen6 IDE/TDISP、key mover、防竄改、PUF/TRNG、經過 SCA 加固的版本</td><td>tessera-rtl</td><td>很高</td><td><span class="sev h">早期</span> 只有加速器</td></tr>
+      <tr><td>晶片和卡</td><td>ASIC 量產、OEM 板卡、FIPS L3 證書</td><td>—</td><td>很高（18–24 個月以上的認證）</td><td>還沒出貨</td></tr>
+      <tr><td>韌體</td><td>新晶片的 PAL 移植、長期維護和 CVE 回應</td><td>tessera-sw/fw</td><td>中</td><td><span class="sev ok">成熟</span></td></tr>
+      <tr><td>主機整合</td><td><b>PKCS#11</b>、KMIP、JCE、Windows CNG/KSP、Kubernetes CSI、Vault 或 KMS 外掛</td><td>tessera-sw/plugins</td><td>低到中</td><td><span class="sev m">缺口</span> 只有 OpenSSL</td></tr>
+      <tr><td>服務</td><td>DARC 金鑰遷移顧問、PQC 遷移、監管合規（DORA/PCI）</td><td>—</td><td>低</td><td>還沒人做</td></tr>
+      <tr><td>過渡期產品</td><td>機密 VM 裡的軟體 HSM（sidecar）</td><td>sidecar-scripts + unikraft</td><td>低</td><td><span class="sev h">不能當產品</span> 見 H-1、H-2</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>SWOT（從潛在參與者的角度）</h3>
+  <div class="swot">
+    <div class="card"><h4 style="color:var(--sev-ok)">S 優勢</h4><ul><li>hyperscaler 背書，有現成的大量需求（Azure 全機隊）</li><li>軟體堆疊完整，有模擬器，上手成本低</li><li>全部開源（MIT、Apache-2.0、GPL-2.0），可以審查</li><li>一開始就把 PQC 納入規格（ML-DSA、ML-KEM、hybrid）</li></ul></div>
+    <div class="card"><h4 style="color:var(--sev-h)">W 弱點</h4><ul><li>晶片安全邊界還沒開源，現在沒辦法驗證</li><li>規格還是 v0.5，和程式碼不同步</li><li>生態整合只有 OpenSSL</li><li>版權和治理目前以 Microsoft 為主</li></ul></div>
+    <div class="card"><h4 style="color:var(--accent)">O 機會</h4><ul><li>PQC 遷移截止時間（CNSA 2.0）帶來強制的換機潮</li><li>DORA 和主權雲對「可退出性」的需求</li><li>PKCS#11 和 KMS 整合還是空白市場</li><li>台灣半導體供應鏈：ASIC 設計服務、封測、安全 IP</li></ul></div>
+    <div class="card"><h4 style="color:var(--sev-m)">T 威脅</h4><ul><li>FIPS L3 的認證時程和成本</li><li>規格可能被單一 hyperscaler 的需求帶著走</li><li>AWS、Google 推出自己的互斥方案</li><li>開源之後，硬體毛利會被壓縮</li></ul></div>
+  </div>
+
+  <h3>給安全 IP 廠商（例如 PUF / RoT 供應商）的具體切入點</h3>
+  <div class="tscroll"><table>
+    <thead><tr><th>Tessera 的需求</th><th>規格依據</th><th>現在的做法</th><th>可以切入的產品</th></tr></thead>
+    <tbody>
+      <tr><td>UDS、BKS1 這類裝置唯一秘密</td><td>Sealing Primitives §BKS、CRD Manufacturing Key Provisioning</td><td>std PAL 寫死在程式碼；Uno 存在 OTP/BKS store</td><td>PUF 推導的 UDS 和 HUK：免注入、抗探測，正好補上 H-1 的根因</td></tr>
+      <tr><td>SP 800-90B 熵源</td><td>CRD §Random Numbers、SEC-PCIE-FEATURES-4</td><td>RTL 只有 HMAC-DRBG（沒有熵源）</td><td>通過 90B 驗證的 TRNG IP</td></tr>
+      <tr><td>防竄改：溫度、電壓、頻率監控、shield</td><td>CRD §Physical Security（FIPS L3 必要）</td><td>RTL 裡還沒有</td><td>Anti-tamper sensor IP 和防護層</td></tr>
+      <tr><td>Caliptra 2.2 subsystem 整合</td><td>CRD §Root of Trust</td><td>規格寫死要 Caliptra</td><td>已經有「Caliptra + 自家 RoT」整合經驗的團隊，可以直接提供參考整合</td></tr>
+      <tr><td>RSA 和 PQC 加速器的 SCA 加固</td><td>FIPS 140-3 L3 非侵入式攻擊緩解</td><td>RSA 的 CRT 不能 blinding（M-2）</td><td>經過 SCA 加固的 PKA IP，或提供 SCA 評估服務</td></tr>
+    </tbody>
+  </table></div>
+  <p style="color:var(--muted);font-size:13px">以上「機會」是根據規格和程式碼缺口推出來的<b>假設</b>，還需要和 OCP 工作小組、潛在客戶驗證過才算數。這份文件刻意不放市場規模數字，因為沒有可靠的公開來源可以直接引用。</p>
+</div></section>
+
+<!-- ================= NEXT ================= -->
+<section id="next"><div class="wrap">
+  <h2><span class="num">08</span>建議的下一步（30 / 60 / 90 天）</h2>
+  <div class="grid3">
+    <div class="card"><h3 style="margin-top:0">30 天：先跑起來</h3><ul class="tight">
+      <li><code>cargo xtask precheck --setup</code>，在模擬器上跑完 <code>tsra_api_tests</code></li>
+      <li>用 <code>kvm-linux-nosnp</code> 的 sidecar 跑 ECC P-384 loop，量一次延遲</li>
+      <li>把 H-1、H-2、M-1 整理成 issue 或 responsible disclosure，先私下聯絡維護者</li>
+      <li>加入 OCP Tessera 工作小組的郵件清單</li>
+    </ul></div>
+    <div class="card"><h3 style="margin-top:0">60 天：找到位置</h3><ul class="tight">
+      <li>在 std PAL 的 <code>HsmSeedStore</code> 做一個「外部熵源 / PUF」的實作，當成 PoC（替換 seed.rs）</li>
+      <li>畫出自家 IP 對應 CRD 需求 ID 的表（REQ ↔ IP）</li>
+      <li>評估 PKCS#11 shim：包在 <code>api/native</code> 的 C ABI 上面</li>
+    </ul></div>
+    <div class="card"><h3 style="margin-top:0">90 天：對外</h3><ul class="tight">
+      <li>對 tessera-specs 提 PR：Entropy、Tamper、Key Storage 的需求細化</li>
+      <li>做一份可以展示的 demo：PUF 推導的 UDS 加上 DARC 搬一把 key</li>
+      <li>先和一家 FIPS 實驗室、一家 ASIC 設計服務公司談合作</li>
+    </ul></div>
+  </div>
+</div></section>
+
+<div class="wrap foot">
+  <p><b>資料來源（commit 已固定）：</b>
+  tessera-specs <span class="mono">bcdb753</span> · tessera-rtl <span class="mono">fc5e739</span> · tessera-sw <span class="mono">3281212</span> · tessera-linux-driver <span class="mono">a43d313</span> · tessera-sidecar-scripts <span class="mono">d3292a9</span> · unikraft <span class="mono">0a6044d</span>。
+  所有 repo 都以 git submodule 的方式掛在這個 repo 的 <code>repos/</code> 底下。</p>
+  <p>這是靜態閱讀的結果，沒有執行程式碼，也沒有在硬體上驗證。資安發現在公開之前，請先走 responsible disclosure。</p>
+</div>
+
+<script>
+/* ---------- theme ---------- */
+(function(){
+  var b=document.getElementById('themeBtn'), r=document.documentElement;
+  try{var t=localStorage.getItem('tsr-theme'); if(t) r.setAttribute('data-theme',t);}catch(e){}
+  b.onclick=function(){
+    var cur=r.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    var nx=cur==='dark'?'light':'dark'; r.setAttribute('data-theme',nx);
+    try{localStorage.setItem('tsr-theme',nx);}catch(e){}
+  };
+})();
+
+/* ---------- exploded map data ---------- */
+var GH='https://github.com/TesseraHSM/';
+var SHA={specs:'bcdb753953dbb0067a7764130e47b0d156adf6fb',rtl:'fc5e739d481e66f58c381801fa6410b79baad1ec',sw:'32812128eab66c6701a2d9f33dbed0022ef8f30d',drv:'a43d3135d92d7780bdb97334de25044bdd07c5d3',side:'d3292a945eb3f5eb02e0ab9546dcf9f3335fbc61',uk:'0a6044d07f0f43de5b7b6044c3c5e7b4d523585c'};
+var REPO={specs:'tessera-specs',rtl:'tessera-rtl',sw:'tessera-sw',drv:'tessera-linux-driver',side:'tessera-sidecar-scripts',uk:'unikraft'};
+function link(r,p){return GH+REPO[r]+'/tree/'+SHA[r]+'/'+(p||'');}
+
+var LAYERS=[
+ {name:'L0 規格',sub:'tessera-specs',color:'var(--c-spec)',nodes:[
+  {t:'Definition',r:'specs',p:'Tessera - Definition.md',s:'願景、6 大金鑰管理反模式',d:['點出業界常見的 6 個反模式：在 HSM 外產生金鑰、匯出金鑰、為了韌性把金鑰快取在外面、延遲、治理、監管','定位為「workload-attached companion HSM」','工作成果：OCP 規格、參考實作、OCP 硬體通路']},
+  {t:'Chip Requirements',r:'specs',p:'Tessera - Chip Requirements Specification.md',s:'429 項需求 ID · 116 KB',d:['PCIe Gen6 x4、NVMe 2.0 風格指令、PF0 有 1536 組 SQ/CQ、每個 port 512 個 VF','至少 4 顆 M7/E6 核心、8 MB GSRAM、4 MB Key Vault','效能目標：ECC P-256 每秒 200k 次、RSA-2048 CRT 每秒 100k 次、ML-DSA-44 每秒 200k 次','FIPS 140-3 Level 3 全晶片邊界、Caliptra 2.2 作為 RoT','Pinned 模式和 Offloaded 模式（masked key）兩種金鑰模型']},
+  {t:'Command Spec',r:'specs',p:'Tessera - Command Specification.md',s:'TBOR 線格式 + 37 個指令',d:['Part I：TBOR 編碼（header + TOC + data）','Part II：DDI header、Default-PSK gate、session 握手','Part III：每個 opcode 的 request/response','已經落後程式碼：沒有 ML-DSA/ML-KEM（0x26–0x2B）']},
+  {t:'Deployment Models',r:'specs',p:'Tessera – Deployment Models.md',s:'HSM cache vs HSM service',d:['模式 1：無狀態 HSM cache，裝在每台伺服器、TEE、VM 旁','模式 2：叢集化的 HSM 服務，由 sealing service 負責組態','IDevID → AOAC → PAC/POAC 三鏈擁有權','Partition clone、Local/Live-migration key recovery']},
+  {t:'DARC',r:'specs',p:'Tessera - DARC Specification.md',s:'跨廠商單把金鑰傳輸',d:['TMK（AES-256）用 HPKE-Auth P-384 封裝','雙向認證：DATA 認證目標裝置，POTA 認證來源分區','傳輸 payload 用 COSE_Key 帶著金鑰屬性一起走','Open Items：RSA 和對稱金鑰、PQC hybrid、撤銷機制']},
+  {t:'Sealing / TMK Protocol',r:'specs',p:'Tessera - Primitives for Sealing Services.md',s:'BKS1/2/3、Security Domain',d:['Backup Key = KDF(BKS1 裝置類別 ‖ BKS2 Owner ‖ BKS3 分區 Owner)','Security Domain：同一個 POTA 底下共用 MK 和 BKS3','Transfer Masking Key Protocol：三層憑證加上 HPKE 和 key confirmation']}
+ ]},
+ {name:'L1 晶片 RTL',sub:'tessera-rtl · SystemVerilog',color:'var(--c-rtl)',nodes:[
+  {t:'ML-DSA / ML-KEM',r:'rtl',p:'src/mldsa_mlkem_all_levels',s:'~31.7k 行 · 來自 Caliptra Adams Bridge',d:['NTT、Barrett reduction、rejection sampler、CBD sampler、SHA-3','支援所有等級：ML-DSA 44/65/87、ML-KEM 512/768/1024','有 UVMF 驗證環境']},
+  {t:'AES all modes',r:'rtl',p:'src/aes_all_modes',s:'~19.7k 行 · Caliptra/OpenTitan 系',d:['ECB/CBC/CTR/CFB/OFB/GCM','有 masking 和 shadowed 暫存器（抗故障注入）','CLP wrapper']},
+  {t:'SHA-3 / SHAKE',r:'rtl',p:'src/sha3_shake_all_modes',s:'~12.2k 行',d:['KMAC reg top','ML-DSA 的 external-mu 會用到它']},
+  {t:'ECC ECDSA/ECDH',r:'rtl',p:'src/ecc_ecdsa_ecdhe',s:'~9.7k 行',d:['tessera_ecc_top、dsa_ctrl、pm_ctrl','⚠ RTL 裡只看得到 P-384；CRD 要求的 P-256、P-256K、P-521 都還沒有硬體實作']},
+  {t:'RSA 2k/3k/4k ★原創',r:'rtl',p:'src/rsa_4k_3k_2k',s:'~8.9k 行 · 唯一非 Caliptra 的區塊',d:['Montgomery 乘法、固定視窗 modexp、CRT + Garner','強制 Bellcore 驗證（防故障注入）','⚠ CRT 和 blinding 互斥，預設 blinding 關閉（M-2）','⚠ 沒有 Key Vault 介面，私鑰經過 AHB']},
+  {t:'SHA-2 / HMAC / DRBG',r:'rtl',p:'src/',s:'sha256/512（含 masked 版）、hmac256/512、hmac_drbg',d:['SHA-256 和 SHA-512 各有 masked 版本（抗 DPA）','HMAC-DRBG 只有 398 行，只是 DRBG，沒有熵源','每個區塊都有 revinfo.yml 記錄 upstream commit']},
+  {t:'(缺) SoC 整合',r:'rtl',p:'—',s:'Key mover、pool manager、PCIe IDE/TDISP、GSRAM、tamper',d:['這些是 CRD 的核心安全需求，但 repo 裡還沒有','沒有它們就沒辦法驗證「韌體看不到明文金鑰」這個承諾（M-3）']},
+  {t:'CI：來源可追溯',r:'rtl',p:'.github/workflows/checks.yml',s:'round-trip diff 對 upstream',d:['verify_import、check_filelists','把改名去掉之後和 Caliptra 指定 commit 逐位元比對','reimport 可重現']}
+ ]},
+ {name:'L2 韌體核心',sub:'tessera-sw/fw/core · no_std Rust',color:'var(--c-fw)',nodes:[
+  {t:'HSM core lib',r:'sw',p:'fw/core/lib',s:'21k 行 · 分派器 + 分區狀態機',d:['hsm.rs、io.rs：SQE 解析 → DMA in → 分派 → DMA out → CQE','part_state.rs（1.2k 行）：分區生命週期','ddi/tbor/*：43 個指令處理器；ddi/mbor/*：舊版指令','session.rs：CO/CU 角色、Default-PSK gate']},
+  {t:'Crypto building blocks',r:'sw',p:'fw/core/crypto',s:'13k 行',d:['hpke（3k 行）、x509-builder / x509-chain','key-masking、aead-envelope、gcm-buf','key-report（attestation）、cose-key、key-derive']},
+  {t:'DDI codecs',r:'sw',p:'fw/core/ddi/{tbor,mbor}',s:'21.6k 行 · derive 巨集',d:['TBOR codec、types、derive','每個 opcode 一個 types 檔，定義 TBOR_OP_* 常數','MBOR：舊版 Azure IHSM 協定']},
+  {t:'undo / io / oob / evidence',r:'sw',p:'fw/core/{undo,io,oob,evidence}',s:'交易式回滾、OOB 描述子',d:['undo log：多步驟變更失敗時回滾','oob：大型 payload 的帶外指標','evidence：證明資料']},
+  {t:'PAL traits',r:'sw',p:'fw/pal/traits',s:'平台抽象介面',d:['HsmPal、HsmIoController、HsmGdmaController','HsmVault、HsmSeedStore、HsmCertStore、HsmPartitionManager','換一顆晶片只要實作這組 trait']}
+ ]},
+ {name:'L3 平台實作',sub:'PAL · 實機 vs 主機',color:'var(--c-fw)',nodes:[
+  {t:'Uno 實機韌體',r:'sw',p:'fw/plat/uno/fw',s:'36k 行 · Cortex-M · Embassy',d:['512K flash、187K DTCM','驅動：aes、upka、pqc、gdma、iic/oic（佇列）、vault、bks_store、rng、sha','32 個 handle_io task 的 pool','看起來是第一代 IHSM 的晶片，不是 Tessera 規格的晶片']},
+  {t:'Uno PQC fastpath',r:'sw',p:'fw/plat/uno/pqc',s:'6k 行 · 獨立 workspace',d:['PQC 用的獨立核心韌體','透過 mailbox/IPC 和 HSM core 溝通']},
+  {t:'Uno RDL 和 reggen',r:'sw',p:'fw/plat/uno/{rdl,crates}',s:'SystemRDL → Rust 暫存器',d:['自寫 systemrdl parser 和 reggen','soc 和 cortex-m 暫存器對應']},
+  {t:'std PAL',r:'sw',p:'fw/plat/std',s:'14.8k 行 · tokio + OpenSSL',d:['在主機上原生跑 HSM core','模擬器（ddi_emu）和 sidecar 都用這層','⚠ seed.rs 寫死 UDS、BKS1、BKS2（H-1）']}
+ ]},
+ {name:'L4 主機端',sub:'driver + SDK',color:'var(--c-host)',nodes:[
+  {t:'Linux driver tsra.ko',r:'drv',p:'/',s:'13k 行 C · GPL-2.0',d:['PCI 1414:C003（Microsoft vendor ID）','ioq、ioq_pool：NVMe 風格的佇列','hsm_dev（控制路徑 ioctl）、aes_dev（快速路徑 XTS/GCM）、mgmt_dev（PF 管理 VF 資源）','⚠ reset ioctl 沒有檢查權限（M-4）']},
+  {t:'DDI 傳輸層',r:'sw',p:'ddi/',s:'nix · win · sock · emu · mock · mbor/sim',d:['ddi/interface：共用 trait','nix 和 win 對應實機驅動；emu 是同行程跑韌體；mock 和 sim 是舊版模擬器','sock：vsock 連 sidecar（沒有認證）']},
+  {t:'tsra_api (Rust SDK)',r:'sw',p:'api/lib',s:'25k 行',d:['partition、session、resiliency','algo/*：每個演算法的高階 API','resiliency：斷線或 reset 後自動重建 session 和金鑰']},
+  {t:'tsra_api_native (C ABI)',r:'sw',p:'api/native',s:'14.7k 行 · cbindgen',d:['給 C/C++ 和其他語言用的 handle table','darc.rs、sd.rs、session_ex.rs','PKCS#11 適合包在這一層上面']},
+  {t:'Test suites',r:'sw',p:'api/tests',s:'92k 行 · Rust + C++',d:['C++ fixture 可以跑在 mock、emu 或實機','EX/TBOR 和 legacy/MBOR 兩種 session 模式','⚠ EX 測試會 reset 所有分區，只能用測試機']}
+ ]},
+ {name:'L5 生態整合',sub:'plugins · examples',color:'var(--c-int)',nodes:[
+  {t:'OpenSSL 3 Provider',r:'sw',p:'plugins/ossl_prov',s:'22.5k 行 C+Rust',d:['RSA、EC（keymgmt/sig/enc）、ECDH、AES-GCM/XTS、HKDF、SHA-2','masked key 存放（store）','有 nginx 整合範例和整合測試','缺 PQC（L-2）']},
+  {t:'OpenSSL Engine (legacy)',r:'sw',p:'plugins/ossl_engine',s:'16.6k 行',d:['用 ENGINE API 實作（OpenSSL 3 已棄用這套 API）','resiliency 子 crate']},
+  {t:'Sealing service 範例',r:'sw',p:'examples/sealing',s:'root_svc · leaf_svc · report',d:['示範 Deployment Models 裡的 sealing service','root 和 leaf 兩層服務']},
+  {t:'TPM crate',r:'sw',p:'crates/tpm',s:'3.6k 行',d:['和平台 TPM 互動（量測或 sealing）']},
+  {t:'(缺) PKCS#11 / KMIP / CNG',r:'sw',p:'—',s:'商業缺口',d:['傳統 HSM 生態的共通介面','Java、資料庫 TDE、CA 軟體、Vault 都需要']}
+ ]},
+ {name:'L6 Sidecar',sub:'機密 VM 軟體 HSM',color:'var(--c-side)',nodes:[
+  {t:'sidecar build.sh',r:'side',p:'build.sh',s:'4 種 variant',d:['mshv-unikraft-snp（Hyper-V + SEV-SNP）','mshv-unikraft-nosnp、kvm-unikraft-nosnp','kvm-linux-nosnp（Linux 6.12 microvm + initramfs）','用 app-elfloader 直接跑沒改過的 Linux ELF']},
+  {t:'ddi_sock_server',r:'sw',p:'examples/sock/ddi_sock_server',s:'vsock :1234 · partition 10',d:['把 StdHsm 包成 vsock 服務','⚠ 沒有認證，作者標示為測試用（H-2）']},
+  {t:'Unikraft fork',r:'uk',p:'plat/mshv',s:'新增 MSHV 平台 · ~4.9k 行 C',d:['mshv_snp.c、mshv_ghcb.c：SEV-SNP GHCB 協定','synic、shmem、tscclock','Microsoft Hyper-V 的 unikernel 支援']}
+ ]}
+];
+
+var layersEl=document.getElementById('layers'), detail=document.getElementById('detail'), active=null;
+var arrows=['規格約束 ↓','RTL 由韌體驅動 ↓','核心透過 PAL trait 呼叫 ↓','PCIe / DMA ↓','SDK 被應用程式呼叫 ↓','同一套核心也能跑在 VM 裡 ↓'];
+LAYERS.forEach(function(L,i){
+  var row=document.createElement('div'); row.className='layer';
+  var h=document.createElement('div'); h.className='lh'; h.style.background=L.color; h.innerHTML=L.name+'<small>'+L.sub+'</small>';
+  var bx=document.createElement('div'); bx.className='boxes';
+  L.nodes.forEach(function(n){
+    var b=document.createElement('button'); b.type='button'; b.className='node'; b.style.setProperty('--k',L.color);
+    b.innerHTML='<b>'+n.t+'</b><span class="p">'+n.p+'</span><span class="s">'+n.s+'</span>';
+    b.onclick=function(){
+      if(active) active.classList.remove('active'); active=b; b.classList.add('active');
+      var href=n.p==='—'?'':link(n.r,n.p==='/'?'':n.p);
+      detail.innerHTML='<h4><span class="dot" style="background:'+L.color+'"></span>'+n.t+' <span class="tag">'+REPO[n.r]+'</span></h4>'+
+        '<div class="p">'+(href?'<a href="'+href+'" target="_blank" rel="noopener">'+n.p+'</a>':'尚未公開')+' · '+n.s+'</div>'+
+        '<ul>'+n.d.map(function(x){return '<li>'+x.replace(/⚠/g,'<span style="color:var(--sev-h)">⚠</span>')+'</li>';}).join('')+'</ul>';
+    };
+    bx.appendChild(b);
+  });
+  row.appendChild(h); row.appendChild(bx); layersEl.appendChild(row);
+  if(i<LAYERS.length-1){var a=document.createElement('div');a.className='arrow-row';a.innerHTML='<div></div><div>'+arrows[i]+'</div>';layersEl.appendChild(a);}
+});
+
+/* ---------- repo trees ---------- */
+var TREES=[
+ {repo:'tessera-sw',r:'sw',lic:'MIT',lang:'Rust + C/C++',loc:'~441k Rust · ~76k C/C++',desc:'整個專案的重心：韌體核心、平台層、主機 SDK、模擬器、OpenSSL 整合。',
+  mix:[['crates（多為測試向量）',378],['fw',131],['ddi',117],['api',138],['plugins',40],['其他',25]],
+  tree:[
+  ['fw/','韌體',[
+    ['core/','與平台無關的 HSM 邏輯',[
+      ['lib/','分派器、分區狀態、session（21.3k）',[['src/ddi/tbor/','43 個 TBOR handler'],['src/ddi/mbor/','舊版 MBOR handler'],['src/part_state.rs','分區生命週期（1.2k）'],['src/io.rs','SQE → DMA → dispatch → CQE']]],
+      ['crypto/','hpke · x509 · key-masking · aead-envelope · cose-key · key-report',null],
+      ['ddi/tbor · ddi/mbor','codec + types + derive（21.6k）',null],
+      ['undo/ · io/ · oob/ · evidence/ · tracing/','交易、IO、帶外指標',null],
+      ['key-decode/ · key-unwrap/','金鑰匯入解析',null]]],
+    ['pal/traits/','平台抽象 trait：alloc、cert、gdma、io、part、seed、session、vault',null],
+    ['plat/std/','主機原生 PAL：tokio + OpenSSL（14.8k）',[['pal/src/seed.rs','⚠ 寫死的 UDS 和 BKS'],['pal/src/part.rs','分區屬性存放']]],
+    ['plat/uno/','實機（Cortex-M，獨立 workspace）',[['fw/app','Embassy 進入點，32 個 IO task'],['fw/drivers/','aes、upka、pqc、gdma、iic、oic、vault、bks_store、rng、sha、uart…（23 個）'],['fw/crates/','key_vault、crashdump、trace、fault…'],['pqc/','PQC fastpath 核心韌體'],['rdl/ + crates/reggen','SystemRDL → Rust 暫存器']]]]],
+  ['ddi/','主機端裝置介面',[['interface/','共用 trait'],['nix/ · win/','Linux / Windows 實機'],['emu/','同行程跑新版韌體'],['mock/ · mbor/sim/','舊版模擬器'],['sock/','vsock 傳輸 + proto'],['tbor/ · mbor/','host 端的 codec']]],
+  ['api/','SDK',[['lib/','Rust SDK：partition、session、resiliency、algo（25k）'],['native/','C ABI（cbindgen）：darc、sd、session_ex（14.7k）'],['tests/','Rust + C++ 一致性測試（92k）']]],
+  ['plugins/','生態整合',[['ossl_prov/','OpenSSL 3 provider + nginx 範例'],['ossl_engine/','OpenSSL ENGINE API 版（舊版）']]],
+  ['crates/','共用函式庫',[['crypto/','包 OpenSSL 的密碼函式庫，含約 324k 行 NIST 測試向量'],['tpm/ · x509/ · cred_encrypt/ · session_ex_crypto/',''],['resiliency_macro/ · tbor_test_harness/ · test_with_tracing/','']]],
+  ['examples/','sealing（root_svc/leaf_svc）、sock（ddi_sock_server、ecc384_loop）',null],
+  ['fuzz/','24 個 TBOR fuzz target',null],
+  ['docs/tbor-ddi/','每個指令一份 md（44 份）',null],
+  ['xtask/','build、fmt、copyright、precheck、nextest',null],
+  ['.github/workflows/','rust、coverage、codeql、fw_uno、provider-matrix、engine-matrix',null]]},
+ {repo:'tessera-rtl',r:'rtl',lic:'Apache-2.0',lang:'SystemVerilog',loc:'~98k RTL（rtl/ 目錄）+ UVMF/TB',desc:'密碼加速器 IP。除了 RSA，其他全部從 chipsalliance/caliptra-rtl 引入，並由 CI 證明只有改名。',
+  mix:[['ML-DSA/KEM',31.7],['AES',19.7],['SHA3',12.2],['ECC',9.7],['RSA',8.9],['HMAC',7],['SHA2',8.2],['DRBG',0.4]],
+  tree:[
+  ['src/','',[
+   ['mldsa_mlkem_all_levels/','Adams Bridge：ntt_top、barrett、samplers、encode/decode、abr_sha3…（31.7k）',null],
+   ['aes_all_modes/','AES + GCM，masked、shadowed reg（19.7k）',null],
+   ['sha3_shake_all_modes/','KMAC/SHA-3/SHAKE（12.2k）',null],
+   ['ecc_ecdsa_ecdhe/','ECDSA/ECDH（9.7k）',null],
+   ['rsa_4k_3k_2k/','★ 原創：montgomery、modexp、crt_garner、Bellcore 驗證（8.9k）',null],
+   ['hmac_256/ · hmac_512_384/ · hmac_drbg/','',null],
+   ['sha2_256_all_modes(_masked)/ · sha2_512_384_all_modes(_masked)/','',null]]],
+  ['tools/scripts/rename/','import_block、rename_*.sh、roundtrip_check、verify_import',null],
+  ['.github/workflows/checks.yml','verify、roundtrip、reimport',null]]},
+ {repo:'tessera-specs',r:'specs',lic:'—',lang:'Markdown',loc:'~70.6k 字 · 7 份規格',desc:'OCP 規格草案 v0.5.0。作者來自 Microsoft、Marvell、Oracle。',
+  mix:[['Command',224],['Chip CRD',116],['Deployment',68],['DARC',31],['Sealing',29],['TMK',28],['Definition',6]],
+  tree:[
+  ['Tessera - Definition.md','專案定義與反模式',null],
+  ['Tessera - Chip Requirements Specification.md','CRD：429 項需求 ID',null],
+  ['Tessera - Command Specification.md','TBOR 線格式、DDI、37 個指令',null],
+  ['Tessera – Deployment Models.md','HSM cache / service、憑證鏈',null],
+  ['Tessera - DARC Specification.md','跨廠商金鑰傳輸',null],
+  ['Tessera - Primitives for Sealing Services.md','BKS、Masking Key、Security Domain',null],
+  ['Tessera - Transfer Masking Key Protocol.md','三層憑證 + HPKE',null],
+  ['img/','28 張架構圖',null]]},
+ {repo:'tessera-linux-driver',r:'drv',lic:'GPL-2.0-or-later',lang:'C',loc:'~13k 行',desc:'Out-of-tree kernel module tsra.ko，PCI 1414:C003。',
+  mix:[['hsm_dev',2.3],['aes_dev',1.4],['ctrl',1.5],['ioq*',2.3],['abort',0.7],['dma_io',0.6],['其他',4.2]],
+  tree:[
+  ['tsra_main.c','probe、PCI ID 表',null],
+  ['tsra_ctrl*.c','控制器狀態與指令',null],
+  ['tsra_hsm*.c','HSM 控制路徑 ioctl（2.3k）',null],
+  ['tsra_aes*.c','AES fast path（XTS/GCM）',null],
+  ['tsra_ioq*.c','NVMe 風格 SQ/CQ、tag pool、perf',null],
+  ['tsra_dma_io.c','使用者頁 pin（FOLL_PIN）與 DMA 映射',null],
+  ['tsra_mgmt*.c','PF 管理 VF 資源數',null],
+  ['tsra_abort.c','中止與恢復流程',null]]},
+ {repo:'tessera-sidecar-scripts',r:'side',lic:'MIT',lang:'Shell',loc:'小',desc:'把 ddi_sock_server 打包成可以開機的 guest 映像（Unikraft 或精簡 Linux）。',
+  mix:[['scripts',1]],
+  tree:[
+  ['build.sh','--variant mshv-unikraft-snp | mshv-unikraft-nosnp | kvm-unikraft-nosnp | kvm-linux-nosnp',null],
+  ['configs/','每個 variant 一份 Kconfig',null],
+  ['scripts/','common.sh、linux.sh、rootfs.sh',null],
+  ['libs/','app-elfloader、lib-libelf（submodule）',null],
+  ['tessera/','sw、unikraft（submodule）',null]]},
+ {repo:'unikraft',r:'uk',lic:'BSD-3-Clause',lang:'C',loc:'fork + ~4.9k 行新增',desc:'Unikraft fork，新增 Microsoft Hyper-V（MSHV）平台，支援 AMD SEV-SNP。',
+  mix:[['plat/mshv',4.9]],
+  tree:[
+  ['plat/mshv/x86/','mshv.c、mshv_snp.c、mshv_ghcb.c、mshv_hv.c、mshv_synic.c、mshv_shmem.c、tscclock.c、vectors.S',null],
+  ['plat/kvm · xen · …','upstream 原有的平台',null]]}
+];
+var palette=['var(--c-fw)','var(--c-host)','var(--c-rtl)','var(--c-int)','var(--c-spec)','var(--c-side)','var(--muted)','var(--accent)'];
+function renderTree(items){
+  return items.map(function(it){
+    var name=it[0],desc=it[1],kids=it[2];
+    if(kids&&kids.length){
+      return '<details class="tree"><summary>'+name+(desc?'<span class="d">'+desc+'</span>':'')+'</summary><div class="kids">'+renderTree(kids)+'</div></details>';
+    }
+    return '<div class="leaf">'+name+(desc?'<span class="d">'+desc.replace(/⚠/g,'<span style="color:var(--sev-h)">⚠</span>')+'</span>':'')+'</div>';
+  }).join('');
+}
+var rt=document.getElementById('repoTrees');
+TREES.forEach(function(T){
+  var total=T.mix.reduce(function(a,b){return a+b[1];},0);
+  var bar=T.mix.length>1?'<div class="bar">'+T.mix.map(function(m,i){return '<i title="'+m[0]+'" style="width:'+(m[1]/total*100)+'%;background:'+palette[i%palette.length]+'"></i>';}).join('')+'</div><div class="pill-row" style="font-size:11.5px;color:var(--muted)">'+T.mix.map(function(m,i){return '<span><span class="dot" style="background:'+palette[i%palette.length]+'"></span>'+m[0]+'</span>';}).join('')+'</div>':'';
+  var c=document.createElement('div'); c.className='card repo-card';
+  c.innerHTML='<div class="repo-head"><h3><a href="'+link(T.r,'')+'" target="_blank" rel="noopener">'+T.repo+'</a></h3><span class="tag">'+T.lang+'</span><span class="tag">'+T.lic+'</span><span class="tag">'+T.loc+'</span></div>'+
+    '<div style="color:var(--muted);font-size:14px">'+T.desc+'</div>'+bar+
+    '<details class="tree" style="margin-top:8px"><summary>展開目錄樹</summary><div class="kids">'+renderTree(T.tree)+'</div></details>';
+  rt.appendChild(c);
+});
+
+/* ---------- commands ---------- */
+var CMDS=[
+ ['0x01','ApiRev','基礎','No','任何人','查詢協定版本'],
+ ['0x02','PartInfo','基礎','No','任何人','分區狀態（剛加入 SD Initialized）'],
+ ['0x03','SessionOpenInit','Session','No','CO/CU','兩段式握手第一步'],
+ ['0x04','SessionOpenFinish','Session','No','CO/CU','推導 session 金鑰'],
+ ['0x05','SessionClose','Session','In','CO/CU','清除 sealing key'],
+ ['0x06','PskChange','Session','In','CO/CU','輪替 PSK（預設 PSK 狀態下唯一能做的事）'],
+ ['0x07','PartInit','分區','In','CO','初始化分區、policy、PAK'],
+ ['0x08','PartFinal','分區','In','CO','鎖定分區，進入 Initialized'],
+ ['0x09','SdSealingKeyGen','Security Domain','In','CO','產生 SD sealing key'],
+ ['0x0A','SdCreateRemoteBackup','Security Domain','In','CO','建立遠端備份'],
+ ['0x0B','SdResealRemoteBackup','Security Domain','In','CO','重新封裝備份'],
+ ['0x0C','SdRestoreRemoteBackup','Security Domain','In','CO','從遠端備份還原'],
+ ['0x0D','SdRestoreLocalBackup','Security Domain','In','CO','本機還原'],
+ ['0x0E','SdCreatePeerBackup','Security Domain','In','CO','對等節點備份（clone）'],
+ ['0x0F','SdRestorePeerBackup','Security Domain','In','CO','從對等節點還原'],
+ ['0x10','KeyReport','證明','In','CO/CU','金鑰證明報告'],
+ ['0x11','HmacGenerateKey','對稱','In','CO/CU','產生 HMAC 金鑰'],
+ ['0x12','Hmac','對稱','In','CO/CU','HMAC 運算'],
+ ['0x13','GetUnwrappingKey','匯入','In','CO/CU','取得匯入用的 unwrap 公鑰'],
+ ['0x14','UnwrapKey','匯入','In','CO/CU','SKR / 匯入金鑰'],
+ ['0x15','AesGenerateKey','對稱','In','CO/CU','產生 AES 金鑰'],
+ ['0x16','AesEncryptDecrypt','對稱','In','CO/CU','AES 加解密'],
+ ['0x17','EccGenerateKey','非對稱','In','CO/CU','產生 EC 金鑰對'],
+ ['0x18','EccSign','非對稱','In','CO/CU','ECDSA 簽章'],
+ ['0x19','EcdhDerive','非對稱','In','CO/CU','ECDH'],
+ ['0x1A','RsaModExp','非對稱','In','CO/CU','RSA 私鑰運算'],
+ ['0x1B','Hash','雜湊/KDF','In','CO/CU','SHA'],
+ ['0x1C','HkdfDerive','雜湊/KDF','In','CO/CU','HKDF'],
+ ['0x1D','ConcatKdfDerive','雜湊/KDF','In','CO/CU','SP800-56 Concat KDF'],
+ ['0x1E','GetCertChainInfo','證明','No','任何人','憑證鏈資訊'],
+ ['0x1F','GetCertificate','證明','No','任何人','取得憑證'],
+ ['0x20','DarcKexKeyGen','DARC','In','CO','目標端：產生 KEX 金鑰'],
+ ['0x21','DarcTmkImport','DARC','In','CO','目標端：匯入 TMK'],
+ ['0x22','DarcKeyUnwrap','DARC','In','CO','目標端：解開並安裝金鑰'],
+ ['0x23','DarcTmkGen','DARC','In','CO','來源端：產生 TMK'],
+ ['0x24','DarcTmkExport','DARC','In','CO','來源端：HPKE 封裝 TMK'],
+ ['0x25','DarcKeyWrap','DARC','In','CO','來源端：用 TMK 包住金鑰'],
+ ['0x26','MldsaGenerateKey','PQC','In','CO/CU','ML-DSA 金鑰產生','drift'],
+ ['0x27','MldsaSign','PQC','In','CO/CU','ML-DSA 簽章','drift'],
+ ['0x28','MldsaVerify','PQC','In','CO/CU','ML-DSA 驗章','drift'],
+ ['0x29','MlkemGenerateKey','PQC','In','CO/CU','ML-KEM 金鑰產生','drift'],
+ ['0x2A','MlkemEncapsulate','PQC','In','CO/CU','ML-KEM 封裝','drift'],
+ ['0x2B','MlkemDecapsulate','PQC','In','CO/CU','ML-KEM 解封裝','drift']
+];
+var tb=document.querySelector('#cmdTable tbody');
+CMDS.forEach(function(c){
+  var tr=document.createElement('tr');
+  var col=c[6]==='drift'?'var(--sev-m)':(c[3]==='No'?'var(--muted)':'var(--c-fw)');
+  tr.innerHTML='<td class="mono"><span class="dot" style="background:'+col+'"></span>'+c[0]+'</td><td><b>'+c[1]+'</b></td><td>'+c[2]+'</td><td>'+(c[3]==='No'?'NoSession':'InSession')+'</td><td>'+c[4]+'</td><td>'+c[5]+(c[6]==='drift'?' <span class="sev m">規格未列</span>':'')+'</td>';
+  tb.appendChild(tr);
+});
+</script>
+</body>
+</html>

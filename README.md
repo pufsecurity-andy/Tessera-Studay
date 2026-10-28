@@ -6,16 +6,23 @@
 
 | 路徑 | 說明 |
 | --- | --- |
-| [`index.html`](index.html) | **Code Map**：七層架構展開圖、請求路徑、六個 repo 的模組樹、TBOR 指令集、信任鏈、資安審查、商業分析 |
-| [`system-map.html`](system-map.html) | **System Map**：雲端、伺服器（VM/hypervisor/sidecar）、PCIe 卡、晶片四層的關係圖，可切換 7 條資料流（運算、DARC 金鑰進入、證明、開機更新、備份、sidecar、營運者管理） |
+| [`index.html`](index.html) | 網站首頁，列出 `pages/` 底下所有頁面 |
+| [`pages/code-map.html`](pages/code-map.html) | **Code Map**：七層架構展開圖、請求路徑、六個 repo 的模組樹、TBOR 指令集、信任鏈、資安審查、商業分析 |
+| [`pages/system-map.html`](pages/system-map.html) | **System Map**：雲端、伺服器（VM/hypervisor/sidecar）、PCIe 卡、晶片四層的關係圖，可切換 7 條資料流（運算、DARC 金鑰進入、證明、開機更新、備份、sidecar、營運者管理） |
 | `repos/` | 六個 TesseraHSM repo 的 git submodule，固定在分析當下的 commit |
 
 ## 線上瀏覽
 
-- Code Map：<https://pufsecurity-andy.github.io/Tessera-Studay/>
-- System Map：<https://pufsecurity-andy.github.io/Tessera-Studay/system-map.html>
+- 首頁：<https://pufsecurity-andy.github.io/Tessera-Studay/>
+- Code Map：<https://pufsecurity-andy.github.io/Tessera-Studay/pages/code-map.html>
+- System Map：<https://pufsecurity-andy.github.io/Tessera-Studay/pages/system-map.html>
 
-兩個頁面都是單一 HTML 檔，也可以下載後直接用瀏覽器打開，不需要網路。
+每個頁面都是單一 HTML 檔，也可以下載後直接用瀏覽器打開，不需要網路。
+
+## 新增頁面
+
+1. 把 HTML 檔放進 `pages/`（頁面內回首頁的連結用 `../index.html`）
+2. 在根目錄 `index.html` 的 `PAGES` 陣列加一筆（`href`、`title`、`desc`、`tags`、`date`）
 
 ## 取得原始碼
 
