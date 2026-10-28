@@ -9,6 +9,7 @@
 | [`index.html`](index.html) | 網站首頁，列出 `pages/` 底下所有頁面 |
 | [`pages/code-map.html`](pages/code-map.html) | **Code Map**：七層架構展開圖、請求路徑、六個 repo 的模組樹、TBOR 指令集、信任鏈、資安審查、商業分析 |
 | [`pages/system-map.html`](pages/system-map.html) | **System Map**：雲端、伺服器（VM/hypervisor/sidecar）、PCIe 卡、晶片四層的關係圖，可切換 7 條資料流（運算、DARC 金鑰進入、證明、開機更新、備份、sidecar、營運者管理） |
+| [`pages/asic.html`](pages/asic.html) | **Tessera ASIC 架構與需求分析**：CRD 375 項需求的方塊圖、效能目標、實作現況、規格問題、IP 機會與完整需求清單 |
 | `repos/` | 六個 TesseraHSM repo 的 git submodule，固定在分析當下的 commit |
 
 ## 線上瀏覽
@@ -16,6 +17,7 @@
 - 首頁：<https://pufsecurity-andy.github.io/Tessera-Studay/>
 - Code Map：<https://pufsecurity-andy.github.io/Tessera-Studay/pages/code-map.html>
 - System Map：<https://pufsecurity-andy.github.io/Tessera-Studay/pages/system-map.html>
+- ASIC 分析：<https://pufsecurity-andy.github.io/Tessera-Studay/pages/asic.html>
 
 每個頁面都是單一 HTML 檔，也可以下載後直接用瀏覽器打開，不需要網路。
 

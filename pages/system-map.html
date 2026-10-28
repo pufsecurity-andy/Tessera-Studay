@@ -121,10 +121,10 @@ h2{font-size:21px;margin:26px 0 10px}
   <div class="kv">
     <div class="card"><h3>雲端 ↔ 晶片：靠憑證，不靠網路</h3><p>晶片不直接連雲端。所有雲端互動（金鑰傳輸、證明、備份）都經過 VM 裡的 SDK 轉送，晶片只負責驗證憑證鏈：製造商 → IDevID，Owner → AOAC，分區 Owner → POAC。所以就算網路斷了，HSM cache 模式還是能繼續運作。</p></div>
     <div class="card"><h3>VM ↔ 晶片：VF 直通，繞過 hypervisor</h3><p>每個租戶的 VM 透過 SR-IOV 拿到一個 VF，經過 IOMMU 直接 DMA 到晶片。TDISP 會把 VF 鎖成 TEE 的 TDI，IDE 則加密 PCIe 連線。營運者（hypervisor）只能透過 PF 建立或刪除分區，<b>看不到任何分區裡的金鑰</b>。</p></div>
-    <div class="card"><h3>韌體 ↔ 晶片：Caliptra 管開機，M7 跑 HSM</h3><p>Caliptra 2.2 從 QSPI flash 驗證並載入韌體，推導 DICE 身分，處理 SPDM 證明。HSM 邏輯（tessera-sw 的 <code>fw/core</code>）跑在控制核心上，透過 key mover 和 pool manager 使用加速器（tessera-rtl）。</p></div>
-    <div class="card"><h3>金鑰平常放在哪裡？</h3><p><b>主機記憶體和雲端儲存。</b>Offloaded 模式下，金鑰都是 AES-GCM 遮罩過的 blob，由 VM 保管，每次使用時才由 key mover 在晶片裡解開。晶片內只長期保存種子（OTP）和少量的 pinned key（GSRAM Key Vault）。</p></div>
+    <div class="card"><h3>韌體 ↔ 晶片：Caliptra 管開機，M7 跑 HSM</h3><p>量產時，Caliptra 2.2 透過專用 I3C 以 OCP streaming boot 載入並量測所有核心的韌體（ROT-3、ROT-7），推導 DICE 身分，並獨占 DOE 處理 SPDM 證明（ROT-4）。HSM 邏輯（tessera-sw 的 <code>fw/core</code>）跑在控制核心上，透過 key mover 和 pool manager 使用加速器（tessera-rtl）。</p></div>
+    <div class="card"><h3>金鑰平常放在哪裡？</h3><p><b>主機記憶體和雲端儲存。</b>Offloaded 模式下，金鑰都是 AES-GCM 遮罩過的 blob，由 VM 保管，每次使用時才由 key mover 在晶片裡解開。晶片內持久保存的只有根秘密與種子（fuse／PUF）；pinned key 只在執行期放在 GSRAM 的 Key Vault 裡。</p></div>
     <div class="card"><h3>Sidecar 是什麼角色？</h3><p>還沒有實體晶片之前，把同一套 HSM 韌體編成軟體，跑在 SEV-SNP 機密 VM 裡，再透過 vsock 提供服務。API 和實機相容，但沒有硬體邊界；而且目前的裝置秘密寫死在程式碼裡（資安審查 H-1）。</p></div>
-    <div class="card"><h3>商業上的控制點</h3><p>誰掌握 <b>Owner CA（AOTA/POTA/DATA）</b>，誰就掌握這顆 HSM 能接收誰的金鑰。這是雲端業者和企業之間真正的權力分配點；晶片廠和 IP 廠的價值則集中在 L3 邊界內那些還沒公開的方塊。</p></div>
+    <div class="card"><h3>商業上的控制點</h3><p>（分析判斷）誰掌握 <b>Owner CA（AOTA/POTA/DATA）</b>，誰就掌握這顆 HSM 能接收誰的金鑰。這是雲端業者和企業之間真正的權力分配點；晶片廠和 IP 廠的價值則集中在 L3 邊界內那些還沒公開的方塊。</p></div>
   </div>
 
   <div class="foot">依據 tessera-specs v0.5.0（CRD、Deployment Models、DARC、Sealing）與 tessera-sw <code>3281212</code>、tessera-rtl <code>fc5e739</code> 的程式碼繪製。晶片內部方塊依 CRD 的需求章節排列，不是實際的 floorplan。</div>
@@ -169,14 +169,14 @@ var N={
  c_owner:{x:395,y:48,w:195,h:110,t:'Owner CA',s:'AOTA · POTA · DATA(DARC)',st:'ext',repo:'tessera-sw: api/native/part_policy.rs',spec:'Deployment Models §AOAC/PAC/POAC',
    d:'三個信任錨：AOTA 簽 AOAC（這顆晶片屬於哪個服務），POTA 簽 POAC（這個分區屬於誰），DATA 則認證 DARC 的目標裝置。它們都綁在分區 policy_hash 裡。',
    b:'整套系統的權力分配點：誰握有 POTA，誰就決定金鑰能流向哪裡。'},
- c_fleet:{x:605,y:48,w:180,h:110,t:'機隊管理 / 韌體簽章',s:'OCP DOT · 雙簽章',st:'ext',repo:'—',spec:'CRD §Firmware Update and Rollback',
-   d:'簽署並派送韌體。Caliptra 採用雙簽章模型（廠商＋Owner），OCP Device Ownership Transfer 讓 Owner 能換掉韌體簽章金鑰。',
+ c_fleet:{x:605,y:48,w:180,h:110,t:'機隊管理 / 韌體簽章',s:'OCP DOT · 雙簽章',st:'ext',repo:'—',spec:'Deployment Models §AOAC；CRD FW-SEC-2/3',
+   d:'簽署並派送韌體。Caliptra 採用硬體雙簽章模型；OCP Device Ownership Transfer（DOT）讓裝置擁有者控制裝置層的憑證鏈，包括韌體簽章金鑰。',
    b:'雲端業者用 DOT 拿回韌體主權，不必完全依賴晶片廠。'},
  c_att:{x:800,y:48,w:180,h:110,t:'證明驗證服務',s:'Attestation verifier',st:'ext',repo:'tessera-sw: fw/core/evidence · key-report',spec:'Deployment Models §Attestation',
    d:'驗證 TEE 報告（SNP/TDX）和裝置證明（SPDM measurement、KeyReport），確認「這個 VM 連的是正確韌體版本的真 Tessera」之後，才放行金鑰。',
    b:'可以和既有的雲端證明服務整合，也是第三方 SaaS 的機會。'},
- c_seal:{x:995,y:48,w:180,h:110,t:'Sealing Service',s:'root_svc · leaf_svc',st:'partial',repo:'tessera-sw: examples/sealing',spec:'Primitives for Sealing Services',
-   d:'HSM 服務模式下的組態和 ring broker：建立 Security Domain、派送 BKS3 和 Masking Key，協調多個 Tessera 之間的分區複製。repo 裡目前只有範例實作。',
+ c_seal:{x:995,y:48,w:180,h:110,t:'Sealing Service',s:'root_svc · leaf_svc',st:'partial',repo:'tessera-sw: examples/sealing',spec:'Primitives for Sealing Services；Deployment Models',
+   d:'HSM 服務模式下的組態服務與 ring broker：可負責把 BKS3 安全地送進分區、協調 Security Domain 與分區複製。repo 裡目前只有範例實作。',
    b:'把它產品化，就是「Tessera 叢集管理」軟體。'},
  c_store:{x:1190,y:48,w:180,h:110,t:'耐久儲存',s:'Masked blobs · BMK 備份',st:'ext',repo:'—',spec:'Definition §Integrated HSM',
    d:'存放遮罩過的金鑰 blob 和備份用的 Masking Key（BMK）。這些都是密文，只有擁有同一個 Security Domain 的 Tessera 才解得開，所以可以放在一般的物件儲存。',
@@ -187,9 +187,9 @@ var N={
  g_ossl:{x:225,y:262,w:165,h:62,t:'OpenSSL Provider',s:'plugins/ossl_prov',st:'partial',repo:'tessera-sw: plugins/ossl_prov',spec:'—',
    d:'支援 RSA、EC、ECDH、AES-GCM/XTS、SHA-2、HKDF，以及 masked key store。缺 ML-DSA/ML-KEM。',b:'PQC 支援是近期最容易補上的缺口。'},
  g_pkcs:{x:225,y:345,w:165,h:62,t:'PKCS#11 / KMIP / CNG',s:'還沒有',st:'missing',repo:'—',spec:'—',
-   d:'傳統 HSM 生態（Java、資料庫 TDE、CA 軟體、Vault）的共通介面，整個專案目前都還沒有。',b:'明確的商業空白：誰先做出來，誰就是 Tessera 的企業入口。'},
+   d:'傳統 HSM 生態（Java、資料庫 TDE、CA 軟體、Vault）的共通介面，整個專案目前沒有 PKCS#11 模組；native API 文件只列出各演算法對應的 PKCS#11 mechanism。',b:'明確的商業空白：誰先做出來，誰就是 Tessera 的企業入口。'},
  g_api:{x:405,y:262,w:180,h:62,t:'tsra_api SDK',s:'api/lib · api/native',st:'open',repo:'tessera-sw: api/lib, api/native',spec:'Command Spec Part II',
-   d:'管理分區、session、resiliency（斷線或 reset 後自動重建）。提供 Rust API 和 C ABI。也是和雲端（KMS、Owner CA、Sealing Service）溝通的地方。',b:''},
+   d:'管理分區、session、resiliency（Live Migration、IO abort、韌體 crash 之後透明復原）。提供 Rust API 和 C ABI。也是和雲端（KMS、Owner CA、Sealing Service）溝通的地方。',b:''},
  g_ddi:{x:405,y:345,w:180,h:62,t:'DDI 傳輸層',s:'ddi_nix · TBOR 編碼',st:'open',repo:'tessera-sw: ddi/nix, ddi/tbor',spec:'Command Spec Part I',
    d:'把指令編成 TBOR（4 byte header + TOC + data），透過 ioctl 交給驅動。也可以換成 ddi_sock（sidecar）或 ddi_emu（模擬器）。',b:''},
  g_drv:{x:405,y:428,w:180,h:62,t:'tsra.ko（VF 端）',s:'PCI 1414:C003',st:'open',repo:'tessera-linux-driver',spec:'CRD §Base Platform',
@@ -204,9 +204,9 @@ var N={
  h_pf:{x:630,y:345,w:170,h:62,t:'tsra.ko（PF 端）',s:'mgmt_dev · VF 資源',st:'open',repo:'tessera-linux-driver: tsra_mgmt*.c',spec:'Deployment Models §PF and VF',
    d:'營運者用 PF 建立 VF 和分區、分配佇列資源。建立之後，分區的設定（使用者、憑證）都只能透過 VF 做。',b:'營運者管得到資源，碰不到金鑰：這是對雲端租戶最重要的承諾。'},
  h_iommu:{x:630,y:428,w:170,h:62,t:'IOMMU / SR-IOV',s:'VF 直通',st:'ext',repo:'—',spec:'CRD BASE-14/15',
-   d:'把 VF 的 DMA 範圍限制在指定 VM 的記憶體裡。每個 port 最多 512 個 VF。',b:''},
- h_bmc:{x:820,y:428,w:175,h:62,t:'BMC / 機櫃管理',s:'Telemetry · FW 派送',st:'ext',repo:'—',spec:'CRD BASE-38',
-   d:'透過 I3C 或 PCIe VDM 上的 MCTP，做韌體更新、遙測、crash dump 收集。',b:''},
+   d:'把 VF 的 DMA 範圍限制在指定 VM 的記憶體裡。單埠模式下每個 PF 最多 512 個 VF，雙埠模式每個 PF 256 個。',b:''},
+ h_bmc:{x:820,y:428,w:175,h:62,t:'BMC / 機櫃管理',s:'Telemetry · FW 派送',st:'ext',repo:'—',spec:'CRD BASE-38、ROT-3',
+   d:'MCTP over PCIe VDM 用於遙測與韌體派送；MCTP over I3C 用於遙測（含韌體記錄）。量產開機則走 Caliptra 專用 I3C 上的 OCP streaming boot。',b:''},
 
  s_vm:{x:1045,y:262,w:310,h:62,t:'Unikraft / Linux microvm',s:'mshv-unikraft-snp 等 4 種 variant',st:'partial',repo:'tessera-sidecar-scripts · unikraft',spec:'—',
    d:'用 app-elfloader 直接執行沒改過的 Linux ELF。SNP variant 會跑在 Hyper-V 的 AMD SEV-SNP 機密 VM 裡。',b:''},
@@ -215,29 +215,29 @@ var N={
  s_std:{x:1045,y:428,w:310,h:62,t:'std PAL + HSM core（軟體）',s:'同一套 fw/core',st:'partial',repo:'tessera-sw: fw/plat/std',spec:'—',
    d:'和實機同一套 HSM 核心，只是平台層換成主機原生的 tokio + OpenSSL。裝置秘密（UDS、BKS1、BKS2）寫死在 seed.rs（H-1）。',b:'讓客戶提早開發和整合，但不能拿來做安全宣稱。'},
 
- b_flash:{x:40,y:572,w:175,h:46,t:'QSPI Flash',s:'韌體映像 · 加密的 Host ID key',st:'missing',repo:'—',spec:'CRD §QSPI',d:'存放韌體映像，以及加密過的 Host ID Keys。',b:''},
- b_rtc:{x:235,y:572,w:175,h:46,t:'RTC / 機殼入侵',s:'Tamper 事件',st:'missing',repo:'—',spec:'CRD §Chassis Intrusion',d:'即時時鐘和機殼開啟偵測，事件會觸發清除金鑰。',b:''},
+ b_flash:{x:40,y:572,w:175,h:46,t:'QSPI Flash',s:'外接 flash 開機 · 復原',st:'missing',repo:'—',spec:'CRD HW-QSPI-1..6、FW-SVC-3',d:'兩組 QSPI：一組接 Caliptra，一組給控制核心（含 RPMC 計數器）。必須支援從外接 flash 開機，每個映像至少 3 個 slot 供復原；量產則改用 streaming boot。加密過的 Host ID Keys 也存在外接 flash。',b:''},
+ b_rtc:{x:235,y:572,w:175,h:46,t:'RTC / 機殼入侵',s:'Tamper 事件',st:'missing',repo:'—',spec:'CRD CINTR-1..6',d:'機殼入侵感測器接到 Tessera。斷電時由 RTC 電源和外接 CR2032 電池維持偵測並記錄時間戳；復電後中斷安全處理器，由韌體第一個處理。',b:''},
  b_pcie:{x:630,y:572,w:170,h:46,t:'PCIe Gen6 x4',s:'1x4 或 2x2 多主機',st:'missing',repo:'—',spec:'CRD BASE-1..3',d:'可以拆成 2x2，讓一張卡同時服務兩台主機，各自的資料路徑互相隔離。',b:''},
- b_i3c:{x:820,y:572,w:175,h:46,t:'I3C / MCTP',s:'頻外管理',st:'missing',repo:'—',spec:'CRD §I2C, I3C and USB',d:'BMC 用的頻外管理匯流排。',b:''},
+ b_i3c:{x:820,y:572,w:175,h:46,t:'I3C / MCTP',s:'Streaming boot · 遙測',st:'missing',repo:'—',spec:'CRD ROT-3、BASE-38、§I3C',d:'Caliptra 專用的 I3C 介面負責 OCP secure boot、recovery 和 streaming boot，量產時所有處理器都從這裡開機（ROT-3）。I3C 上的 MCTP 也用於遙測。',b:''},
  b_pwr:{x:1015,y:572,w:175,h:46,t:'電源 / 散熱',s:'D0/D3 · L1.2',st:'missing',repo:'—',spec:'CRD §Power, §Thermal',d:'電源狀態和散熱設計。',b:''},
 
- k_cal:{x:35,y:690,w:200,h:66,t:'Caliptra 2.2 RoT',s:'Secure boot · DICE · SPDM',st:'ext',repo:'chipsalliance/caliptra（外部）',spec:'CRD §Root of Trust',
-   d:'信任的起點：驗證韌體、推導 IDevID → LDevID → FMC Alias 身分鏈、量測韌體、回應 SPDM 證明。規格寫死要用 Caliptra 2.2。',b:'RoT 已經是公共財了，差異化要放在它周邊（熵源、PUF、防竄改）。'},
- k_otp:{x:255,y:690,w:160,h:66,t:'OTP / Fuses',s:'UDS · BKS1 · BKS2',st:'missing',repo:'tessera-sw: fw/plat/uno/fw/drivers/bks_store',spec:'Sealing §BKS',
-   d:'裝置唯一秘密（UDS）和 Backup Key Seed。韌體有 bks_store 驅動，但存放這些值的硬體不在 RTL repo 裡。',b:'PUF 推導的 UDS/HUK 可以取代熔絲注入，也正好解決 H-1 的根本原因。'},
+ k_cal:{x:35,y:690,w:200,h:66,t:'Caliptra 2.2 RoT',s:'Secure boot · DICE · SPDM',st:'ext',repo:'chipsalliance/caliptra（外部）',spec:'CRD ROT-1..15',
+   d:'信任的起點，而且必須是唯一的 RoT（ROT-1、ROT-2）。它載入並量測所有韌體（ROT-7），推導 IDevID → LDevID → FMC Alias 身分鏈，實作 SPDM 並獨占 DOE 介面（ROT-4），還提供至少 32 階的防回滾計數器（ROT-11）。',b:'RoT 本身是公共財，但 ROT-14 要求內建 PUF 作為 Caliptra 的熵與身分來源，而且整合方式（ROT-15）還沒定義。這正是 PUF 廠商的位置。'},
+ k_otp:{x:255,y:690,w:160,h:66,t:'Fuses / PUF',s:'UDS · Field Entropy · BKS',st:'missing',repo:'tessera-sw: fw/plat/uno/fw/drivers/bks_store',spec:'CRD ROT-5、ROT-14、ROT-15；Sealing §BKS',
+   d:'Caliptra 的 UDS 和 Field Entropy 放在 fuse 裡，除役時必須能清零（ROT-5）。規格要求內建 PUF，作為裝置唯一熵與身分來源（ROT-14），並要定義 PUF 和 fuse 材料如何進入身分推導（ROT-15）。BKS 種子在韌體中由 bks_store 驅動讀取。',b:'規格明文要求 PUF，而且 RTL 和韌體裡都還沒有：這是 PUF IP 最直接的切入點。'},
  k_q:{x:435,y:690,w:180,h:66,t:'NVMe 風格佇列引擎',s:'1536 組 SQ/CQ · IIC/OIC',st:'missing',repo:'tessera-sw: fw/plat/uno/fw/drivers/iic, oic',spec:'CRD BASE-4..9',
    d:'接收各 VF 的提交佇列，把指令交給控制核心，完成後寫回完成佇列並觸發 MSI-X。',b:''},
  k_pcie:{x:635,y:690,w:180,h:66,t:'PCIe 控制器',s:'IDE · TDISP · DOE',st:'missing',repo:'—',spec:'CRD SEC-PCIE-1..8',
    d:'PCIe Gen6 端點，支援 IDE（AES-256-GCM 連線加密）、TDISP 和 DOE（承載 SPDM）。IDE 金鑰只有 PCIe IP 和安全處理器碰得到。',b:''},
  k_tamper:{x:1015,y:690,w:170,h:66,t:'防竄改感測',s:'溫度 · 電壓 · 頻率 · shield',st:'missing',repo:'—',spec:'CRD §Physical Security',
-   d:'FIPS L3 必要的防護：偵測到異常就清除明文金鑰。',b:'安全 IP 廠商的直接切入點。'},
+   d:'FIPS 140-3 L3 要求的物理防護：tamper shield、溫度感測、電壓與頻率監控、有 parity 保護的多位元安全暫存器。存放明文金鑰的加速器、記憶體與緩衝區都必須在保護範圍內。',b:'安全 IP 廠商的直接切入點。'},
  k_trng:{x:1205,y:690,w:170,h:66,t:'TRNG + DRBG',s:'SP 800-90A/B/C',st:'partial',repo:'tessera-rtl: src/hmac_drbg',spec:'CRD §Random Numbers',
    d:'RTL 只有 HMAC-DRBG（398 行），沒有熵源。TRNG 要另外取得並通過 90B 驗證。',b:'經過 90B 驗證的 TRNG IP 是明確的需求。'},
 
- k_mcu:{x:35,y:790,w:200,h:62,t:'Caliptra MCU',s:'開機 · 復原 · 更新',st:'ext',repo:'chipsalliance/caliptra-mcu-sw（外部）',spec:'CRD §Firmware Update',
-   d:'Caliptra subsystem 的 MCU，從 flash 載入映像，處理 recovery 和韌體更新流程。',b:''},
+ k_mcu:{x:35,y:790,w:200,h:62,t:'Caliptra MCU',s:'Subsystem MCU',st:'ext',repo:'chipsalliance/caliptra-mcu-sw（外部）',spec:'CRD ROT-1、ROT-3',
+   d:'Caliptra 2.x subsystem 裡的 MCU，配合 Caliptra 完成 streaming boot、recovery 和韌體載入。',b:''},
  k_cores:{x:435,y:790,w:180,h:62,t:'控制核心 4×M7',s:'HSM 韌體（fw/core）',st:'partial',repo:'tessera-sw: fw/core, fw/plat/uno',spec:'CRD BASE-10',
-   d:'執行 HSM 核心：TBOR 分派、session、分區狀態、DARC 和備份流程。韌體已經開源；Uno 平台看起來是上一代晶片，不是 Tessera 規格的 4×M7。',b:''},
+   d:'執行 HSM 核心：TBOR 分派、session、分區狀態、DARC 和備份流程。韌體已經開源；repo 裡唯一的實機平台是 Uno（Cortex-M），它和 CRD 的 4×M7 架構是不是同一顆晶片，repo 沒有說明。',b:''},
  k_pqcc:{x:635,y:790,w:180,h:62,t:'PQC fastpath 核心',s:'fw/plat/uno/pqc',st:'partial',repo:'tessera-sw: fw/plat/uno/pqc',spec:'CRD §PQC Cryptography',
    d:'專門處理 PQC 的核心韌體，透過 mailbox/IPC 和主核心溝通。',b:''},
  k_gdma:{x:835,y:790,w:160,h:62,t:'GDMA',s:'主機 ↔ GSRAM',st:'partial',repo:'tessera-sw: fw/plat/uno/fw/drivers/gdma',spec:'CRD §GDMA',
@@ -253,7 +253,7 @@ var N={
    d:'Pool manager 負責排程和 QoS（還沒公開）；底下的加速器 RTL 已經開源，12 個裡有 11 個來自 Caliptra。',b:''}
 };
 var ACC=[
- ['ECC','只有 P-384','partial'],['RSA ★','CRT · Bellcore','partial'],['ML-DSA/KEM','所有等級','open'],['AES','GCM · masked','open'],['SHA2 / SHA3','含 masked','open'],['HMAC','256/384/512','open']
+ ['ECC','只有 P-384','partial'],['RSA ★','CRT · Bellcore','partial'],['ML-DSA/KEM','所有等級','open'],['AES','GCM · masked','open'],['SHA2 / SHA3','SHA-2 有 masked 版','open'],['HMAC','256/384/512','open']
 ];
 var ST={open:'--st-open',partial:'--st-partial',missing:'--st-missing',ext:'--st-ext'};
 var STL={open:'開源已實作',partial:'部分／參考',missing:'尚未公開',ext:'外部系統'};
@@ -267,7 +267,7 @@ var E=[
  ['k_gsram','k_km',[2]],['k_trng','k_pool',[]],['k_tamper','k_gsram',[]],['b_rtc','k_tamper',[]],['k_gdma','k_hasher',[]],
  ['c_hsm','g_api',[2]],['c_owner','g_api',[2,3]],['g_api','c_store',[2,5]],
  ['c_mfg','k_cal',[3],1],['k_otp','k_cal',[3]],['k_cal','k_cores',[3,4]],['k_cal','k_pcie',[3]],['b_pcie','h_tsm',[3]],['h_tsm','g_tee',[3]],['g_tee','c_att',[3]],
- ['c_fleet','h_bmc',[4]],['h_bmc','b_i3c',[4]],['b_i3c','k_cal',[4]],['b_flash','k_mcu',[4]],['k_mcu','k_cal',[4]],['k_cores','k_pqcc',[4]],
+ ['c_fleet','h_bmc',[4]],['h_bmc','b_i3c',[4]],['b_i3c','k_mcu',[4]],['k_mcu','k_cal',[4]],['b_flash','k_cal',[4],1],['k_cores','k_pqcc',[4]],
  ['c_seal','g_api',[5]],['k_otp','k_cores',[5]],
  ['g_ddi','s_srv',[6],1],['s_srv','s_std',[6]],['s_vm','s_srv',[6]],
  ['h_hv','h_pf',[7]],['h_pf','b_pcie',[7]],['h_hv','h_iommu',[7]],
@@ -279,14 +279,14 @@ var F=[
  {id:1,c:'--f1',t:'加密運算',sum:'App 簽一次章，從使用者空間走到晶片內的加速器再回來。',steps:[
    ['g_app','App 呼叫 EVP_PKEY_sign()，私鑰是 provider 管理的 masked key handle'],
    ['g_ossl','Provider 把運算轉成 tsra_api 呼叫'],
-   ['g_api','SDK 在既有 session 裡組 EccSign（0x18）請求，附上 masked key blob'],
+   ['g_api','SDK 在既有的 TBOR session 裡組 EccSign（0x18）請求，附上 masked key blob'],
    ['g_ddi','編成 TBOR，透過 ioctl 交給驅動'],
    ['g_drv','驅動寫入 VF 的 SQ，敲 doorbell'],
    ['h_iommu','DMA 直通，不經過 hypervisor'],
    ['k_pcie','PCIe 封包以 IDE 加密進入晶片'],
    ['k_q','佇列引擎把 SQE 交給控制核心'],
    ['k_cores','韌體驗證 session 和權限，GDMA 把參數搬進 GSRAM'],
-   ['k_km','Key mover 在硬體裡解開 masked key，明文不經過韌體'],
+   ['k_km','依 CRD 架構，Key mover 在硬體裡解開 masked key，明文不經過韌體'],
    ['k_pool','ECC 加速器完成簽章，結果經 GDMA 寫回，寫入 CQE 並觸發 MSI-X']]},
  {id:2,c:'--f2',t:'金鑰進入（DARC）',sum:'中央 HSM 把一把金鑰交給 VM 旁邊的 Tessera，全程不出 HSM 邊界。',steps:[
    ['c_owner','分區的 policy 裡已經綁定 POTA（認證來源端）和 DATA（認證目標端）'],
@@ -305,20 +305,20 @@ var F=[
    ['h_tsm','TDISP 把 VF 鎖成 TDI，交給 TEE'],
    ['g_tee','TEE 驗收 TDI，把自己的 SNP/TDX report 和裝置證明一起送出'],
    ['c_att','驗證服務確認兩者都正確之後，才放行金鑰']]},
- {id:4,c:'--f4',t:'開機與韌體更新',sum:'韌體從 flash 進入晶片，以及透過 BMC 頻外更新的路徑。',steps:[
-   ['b_flash','韌體映像存在 QSPI flash'],
-   ['k_mcu','Caliptra MCU 載入映像'],
-   ['k_cal','Caliptra 驗證雙簽章（廠商＋Owner）和 SVN（防回滾），然後量測'],
-   ['k_cores','控制核心和 PQC 核心開始執行 HSM 韌體'],
-   ['c_fleet','更新時，機隊管理系統簽好新映像'],
-   ['h_bmc','BMC 透過 I3C 上的 MCTP 把映像送進 Caliptra'],
-   ['b_i3c','經 I3C / MCTP 進入晶片']]},
+ {id:4,c:'--f4',t:'開機與韌體更新',sum:'量產時，所有處理器的韌體都經由 Caliptra 專用的 I3C 以 OCP streaming boot 載入；外接 flash 是開發與復原用的備援。',steps:[
+   ['c_fleet','機隊管理簽好韌體映像（Caliptra 雙簽章模型）'],
+   ['h_bmc','BMC 或管理端準備映像'],
+   ['b_i3c','透過 Caliptra 專用的 I3C 進行 OCP streaming boot / recovery（ROT-3）'],
+   ['k_mcu','Caliptra subsystem 的 MCU 接收映像'],
+   ['k_cal','Caliptra 驗證簽章與 SVN（防回滾，ROT-11），量測所有韌體（ROT-7）'],
+   ['k_cores','控制核心與 PQC 核心開始執行；執行期更新不得中斷 IO（FW-SVC-1）'],
+   ['b_flash','開發或復原時，也可以從外接 QSPI flash 開機（FW-SVC-3）']]},
  {id:5,c:'--f5',t:'備份與復原',sum:'Masking Key 怎麼備份，怎麼在另一顆 Tessera 上還原。',steps:[
-   ['k_otp','BKS1（裝置類別）、BKS2（Owner）從 OTP 交給韌體'],
-   ['c_seal','Sealing Service 派送 BKS3（分區 Owner），建立 Security Domain'],
-   ['k_cores','BK = KDF(BKS1‖BKS2‖BKS3, 信任錨)，用來遮罩 MK，得到 BMK（SdCreateRemoteBackup）'],
-   ['g_api','SDK 取回 BMK'],
-   ['c_store','BMK 存到耐久儲存；換了一顆同 Owner 的 Tessera 後，用 SdRestore* 還原']]},
+   ['k_otp','BKS1（製造商／root owner）與 BKS2（Tessera Owner，以 AOAC 背書的 sealing key 安裝）提供給韌體'],
+   ['c_seal','TEE 或 Sealing Service 用 POTA 背書的 HPKE 金鑰，把 BKS3 加密送進分區'],
+   ['k_cores','韌體以 BKS1、BKS2、BKS3 加上信任錨推導 Backup Key，用它保護分區初始化時隨機產生的 Masking Key（SdCreateRemoteBackup）'],
+   ['g_api','SDK 取回備份（BMK）'],
+   ['c_store','BMK 存到耐久儲存；同製造商、同 Owner、同 POTA 的 Tessera 可以用 SdRestore* 還原']]},
  {id:6,c:'--f6',t:'Sidecar（過渡路徑）',sum:'還沒有晶片時，同一套 SDK 改連機密 VM 裡的軟體 HSM。',steps:[
    ['g_ddi','DDI 層從 ddi_nix 換成 ddi_sock，連到 vsock://CID:1234'],
    ['s_srv','ddi_sock_server 接收請求（⚠ 沒有認證）'],
