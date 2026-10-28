@@ -109,6 +109,9 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 #reqTable td:first-child{white-space:nowrap;font-family:var(--mono);font-size:12px}
 #reqTable tr.hl td{background:var(--accent-soft)}
 del{color:var(--warn)}
+.aq{margin:6px 0 10px;font-size:13.5px}
+.aqs{font-size:11.5px;color:var(--muted);font-family:var(--mono);margin-bottom:2px}
+.hero .sub .aq{font-size:15.5px;max-width:900px}
 .en{color:var(--muted);font-size:12.5px;margin-top:3px;line-height:1.5}
 .enl{display:inline-block;font-size:10.5px;font-weight:700;border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-right:5px;vertical-align:1px}
 .nm-en{display:block;color:var(--muted);font-size:12px;font-weight:400}
@@ -134,7 +137,7 @@ ul.tight{margin:6px 0;padding-left:20px} ul.tight li{margin:3px 0}
 <div class="wrap hero">
   <span class="tag">依據 Chip Requirements Specification v0.5.0</span><span class="tag">tessera-specs bcdb753</span>
   <h1>Tessera ASIC：架構與需求</h1>
-  <p class="sub">CRD 把 Tessera 定義為「在 OCP 公開開發的下一代 Azure Integrated HSM」：一顆 PCIe Gen6 端點的 HSM ASIC，以 Caliptra 2.2 為唯一的信任根，目標是 FIPS 140-3 Level 3 全晶片邊界。這一頁把規格裡的 375 項需求整理成晶片方塊、效能目標與實作現況，並附上可搜尋的完整需求清單（原文照錄）。</p>
+  <div class="sub" id="heroQ"></div>
   <div class="kpis">
     <div class="kpi"><div class="v">375</div><div class="l">需求 ID（唯一）</div><div class="r">10 章 · 56 類</div></div>
     <div class="kpi"><div class="v">Gen6 x4</div><div class="l">PCIe，可拆成 2 × x2 雙主機</div><div class="r">BASE-1..3 · SCAL-1</div></div>
@@ -150,9 +153,9 @@ ul.tight{margin:6px 0;padding-left:20px} ul.tight li{margin:3px 0}
 <!-- ============ ARCH ============ -->
 <section id="arch"><div class="wrap">
   <h2><span class="num">01</span>晶片方塊圖</h2>
-  <p class="lede">依 CRD 的功能章節排列，不是實際 floorplan。顏色代表<b>開源實作現況</b>（對照 tessera-rtl 與 tessera-sw）。<b>點任一方塊</b>，下方會列出相關需求的原文；點需求 ID 會跳到完整清單。</p>
+  <p class="lede">依 CRD 的功能章節排列，不是實際 floorplan。顏色代表<b>開源實作現況</b>（對照 tessera-rtl 與 tessera-sw）。<b>點任一方塊</b>，下方會列出 CRD 中描述它的段落與相關需求（中文翻譯，下附原文）；點需求 ID 會跳到完整清單。</p>
   <div class="legend">
-    <span class="st open">RTL 已開源</span><span class="st partial">部分 / 有缺口</span><span class="st missing">規格有、RTL 未公開</span><span class="st ext">外部 IP（Caliptra、CPU 核心）</span>
+    <span class="st open">RTL 已開源</span><span class="st partial">部分</span><span class="st missing">規格有、RTL 未公開</span><span class="st ext">外部 IP（Caliptra、CPU 核心）</span>
   </div>
   <div class="ext-row"><span class="pin">PCIe Gen6 x4 ↔ Host</span><span class="pin">I3C ↔ BMC</span><span class="pin">QSPI × 2 ↔ Flash</span><span class="pin">CR2032 ↔ RTC</span><span class="pin">入侵感測 × 2</span><span class="pin">USB2 · GPIO · Debug</span></div>
   <div class="chip" id="chip"></div>
@@ -186,8 +189,8 @@ ul.tight{margin:6px 0;padding-left:20px} ul.tight li{margin:3px 0}
 <!-- ============ STATUS ============ -->
 <section id="status"><div class="wrap">
   <h2><span class="num">04</span>實作現況：規格 vs 開源程式碼</h2>
-  <p class="lede">逐一對照 tessera-rtl（<code>fc5e739</code>）與 tessera-sw（<code>3281212</code>）。「RTL 未公開」不代表不存在，只代表目前的公開 repo 裡看不到。</p>
-  <div class="tscroll"><table id="statusTable"><thead><tr><th>CRD 功能</th><th>相關需求</th><th>公開 repo 中的對應</th><th>現況</th><th>原始碼 / 規格記載</th></tr></thead><tbody></tbody></table></div>
+  <p class="lede">逐一對照 tessera-rtl（<code>fc5e739</code>）與 tessera-sw（<code>3281212</code>）。現況分類規則：<b>RTL 已開源</b>＝公開 repo 中有對應 RTL，且涵蓋 CRD 列出的參數；<b>部分</b>＝有對應 RTL，但只涵蓋 CRD 列出的部分參數或演算法；<b>RTL 未公開</b>＝公開 repo 中沒有對應 RTL；<b>外部 IP</b>＝CRD 指定由外部提供（Caliptra、CPU 核心）。最右欄只列原始碼或規格的原文。</p>
+  <div class="tscroll"><table id="statusTable"><thead><tr><th>CRD 功能</th><th>相關需求</th><th>公開 repo 中的對應</th><th>現況</th><th>原始碼／規格原文</th></tr></thead><tbody></tbody></table></div>
 </div></section>
 
 
@@ -219,57 +222,43 @@ var BY={};CRD.forEach(function(r){BY[r[0]]=r;});
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function fmt(s){return esc(s).replace(/\[刪除線\]([\s\S]*?)\[\/刪除線\]/g,'<del>$1</del>');}
 function zhen(zh,en){return '<div>'+fmt(zh)+'</div><div class="en" lang="en"><span class="enl">原文</span>'+fmt(en)+'</div>';}
+var AQ={"HERO": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Scope", "zh": "這份晶片需求文件列出在 Open Compute 下公開開發、名為 Tessera 的下一代 Azure Integrated HSM 的需求。", "en": "This Chip Requirements Document outlines the requirements for the next generation Azure Integrated HSM developed in the open under Open Compute, named Tessera."}, {"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Product Overview", "zh": "Tessera 是受 Azure Integrated HSM 啟發的開源、可擴展 HSM ASIC 的專案名稱。Tessera（「該 ASIC」或「Tessera」）透過後量子密碼（PQC）服務，以及特別著重於密碼金鑰的強固機密保護機制，為平台安全帶來漸進但關鍵的改進。Tessera 將取得 NIST FIPS 140-3 Level 3 認證，這需要針對此目標做強固的實體與系統設計。", "en": "Tessera is the project name of the open-source scalable HSM ASIC that was inspired by Azure Integrated HSM. Tessera (“the ASIC” or “Tessera”) provides an evolutionary but critical improvement in platform security via post-quantum cryptography (PQC) services, and robust mechanisms for shielded secrets specifically focusing on cryptographic keys. Tessera will be certified to NIST FIPS 140-3 Level 3, requiring robust physical and system design toward this specific target."}, {"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Product Overview", "zh": "基本上，Tessera 是附掛於機密運算（TDISP）的 HSM 裝置，提供強力的金鑰隔離與高速率的密碼服務。", "en": "Fundamentally, Tessera is a Confidential Computing attached (TDISP) HSM device providing a strong key isolation and high rate of cryptographic services."}], "BLK": {"pcie": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Base Platform Requirements", "zh": "Tessera 基本上是一個 PCIe 裝置（端點），以類似 NVMe 的指令與主機互動。", "en": "Tessera is fundamentally a PCIe device (endpoint) that will use NVMe-like commands for host interactions."}, {"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Cryptographic Functions", "zh": "PCIe IDE、安全處理器與 key loader 的加密功能對租戶不可見，是為了裝置的安全運作而存在，而且必須是實體上分開的實體。", "en": "The PCIe IDE, Security processor, and key loader encryption functions are invisible to the tenant and exist for the device’s secure functioning, and MUST exist as physically separate entities."}], "fetch": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · QoS Rationale and Operating Model", "zh": "Tessera 必須在大量 VM 之間達到整體公平且可預測的效能，而工作項目在加速器中所需的時間是可變的，PQC 簽章的情況更是無法預測。", "en": "Tessera must achieve overall fair and predictable performance for a large number of VMs, while work items involve variable and in the case of PQC signing an unpredictable amount of time in an accelerator."}], "gdma": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · GDMA", "zh": "Tessera 需要一個 GDMA 引擎，能在主機記憶體與 GSRAM 之間安排大量傳輸，供處理器叢集在非對稱簽章與 utility 流程中使用。", "en": "Tessera will need a GDMA engine capable of organizing bulk transfers between host memory and GSRAM for use of the processor complex in doing asymmetric signing and utility flows."}], "cpu": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Control Processor Cores and General Memory", "zh": "Tessera 的控制處理器由一組通用核心組成，負責驗證與處理 client 的運算。密碼運算由核心與硬體加速器互動完成，而不是以軟體計算。", "en": "Tessera’s control processor consists of a cluster of general purpose cores whose job is to validate and process client operations. The cryptography will be achieved by cores interacting with hardware accelerators, not by doing computations in software."}], "seq": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Sequencers", "zh": "許多密碼運算是由加速器實作的基本運算多次呼叫組成。一個例子是 RSA 的 OAEP padding，它在 MGF 中反覆使用 SHA2。Tessera 的高速率需要一個與通用核心分開的機制，來協調這些與加速器之間的序列，因為大量呼叫的額外負擔很快就會抵銷加速器的好處。", "en": "Many cryptographic operations are composed of multiple invocations of basic primitives implemented by accelerators. One example is OAEP padding for RSA, which uses SHA2 repeatedly in the MGF. Tessera’s high rate requires a separate facility from GP cores to coordinate such sequences with accelerators, because the overhead of so many invocations soon dominate the benefit of the accelerator."}], "km": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Key Mover", "zh": "Key mover 是用來加密與解密已釋放給 Tessera 之金鑰材料的硬體。金鑰會保存在租戶 VM 的驅動程式記憶體中，讓 Tessera 能為每個租戶支援大量金鑰，而不需要大到不可行的 GSRAM。", "en": "The key mover is hardware to encrypt and decrypt keying material that has been released to Tessera. The keys will be kept in the tenant VM driver memory, allowing Tessera to support many keys per tenant without needing unfeasibly large GSRAM."}, {"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Key Mover · Discussion", "zh": "清除 ephemeral session key 會讓所有以它封裝的金鑰材料永久無法解讀，因為那是唯一儲存的實例。", "en": "Zeroizing the ephemeral session key renders all the keying material sealed with it permanently unintelligible, because that is the only stored instance."}], "gsram": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · GSRAM", "zh": "Tessera 的工作儲存是單一 GSRAM 區域，具有可設定、各自獨立讀寫保護的 aperture。這個機制是劃分哪些硬體引擎與核心可以存取明文金鑰的主要手段。", "en": "Tessera’s working storage will be a single GSRAM region with configurable apertures with independent read and write protection. This mechanism is the primary means of partitioning which hardware engines and cores can access keys in plaintext form."}, {"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Pinned Key Store", "zh": "在 pinned 金鑰儲存模式中，非對稱加密的金鑰會存放在 GSRAM 的 Key Vault 區域。", "en": "In the pinned key-store model keys for asymmetric encryption will be stored in the Key Vault region of GSRAM."}], "hmh": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Host Memory Hashing", "zh": "實務標準中的簽章流程通常是對訊息的雜湊（摘要）簽章，而不是對整個訊息簽章。FIPS 140-3 要求符合規範之簽章運算的雜湊本身必須在裝置的 FIPS 邊界內進行。", "en": "Signing flows in practical standards often sign a hash (digest) of the message being signed rather than the whole message. FIPS 140-3 requires that the hashing operation itself for a conforming signature operation must happen inside the device’s FIPS boundary."}], "pm": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Accelerator Pools", "zh": "同類型的加速器應該分組成 pool，每個 pool 有一個 pool manager，能管理提交與完成，並獨占其下所有加速器的控制權。這些 pool 是所有租戶可見運算執行的地方。", "en": "Accelerators of the same type should be grouped into pools, each with a pool manager capable of managing submissions and completions and having exclusive control of all the accelerators beneath it. These pools are where all the tenant-visible operations are to be performed."}], "rsa": [{"src": "tessera-rtl/src/rsa_4k_3k_2k/rtl/tessera_rsa_top.sv", "zh": "Caliptra RSA 引擎頂層：AHB-Lite slave → 產生的暫存器檔案 → 指令序列器 → Montgomery 資料路徑。沒有 Key Vault 介面：RSA 金鑰超過 512 位元的 KV entry，也不常駐於 DICE。私密指數經由匯流排，透過只能寫入的 RSA_D 傳入。", "en": "Caliptra RSA engine top level: AHB-Lite slave -> generated register file -> command sequencer -> Montgomery datapath. No Key Vault interface: RSA keys exceed a 512-bit KV entry and are not DICE resident.  Private exponents arrive over the bus through write-only RSA_D."}], "ecc": [{"src": "tessera-rtl/src/ecc_ecdsa_ecdhe/rtl/tessera_ecc_params_pkg.sv", "zh": "ECC Secp384r1 所需的參數與暫存器位址。", "en": "required parameters and register address for ECC Secp384r1."}], "pqc": [{"note": "tessera-rtl 中此區塊沒有描述性的檔頭註解。"}], "util": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Accelerator Pools", "zh": "utility pool 提供雜湊與加密運算。它提供 SHA1、SHA2 與 SHA3 雜湊，以及各種 AES 模式。", "en": "The utility pool provides hashing and encryption operations. It provides SHA1, SHA2, and SHA3 hashing, and AES modes."}], "rng": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Random Numbers", "zh": "Tessera 會有一個與 Caliptra SP 內不同的亂數產生器，用來產生租戶運算所需的亂數。", "en": "Tessera will have a random number generator, separate from the one in the Caliptra SP, for use in generating random numbers needed for tenant operations."}, {"src": "tessera-rtl/src/hmac_drbg/rtl/tessera_hmac_drbg.sv", "zh": "HMAC384-drbg 頂層 wrapper，384 位元資料存取。", "en": "HMAC384-drbg top-level wrapper with 384 bit data access."}], "cal": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Security Processor", "zh": "Tessera 內的安全處理器必須是 Caliptra 2.2。", "en": "The Security Processor inside Tessera MUST be Caliptra 2.2."}, {"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Security Processor", "zh": "Caliptra 整合的密碼功能都不提供給系統的任何其他部分使用，只為支援 Caliptra 自身的功能而存在。", "en": "None of Caliptra’s integrated crypto functionalities are available for use in any other part of the system and exist only to support Caliptra’s functions."}], "puf": [{"r": "ROT-14"}], "fuse": [{"r": "ROT-5"}], "rtc": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Chassis Intrusion and Tamper Requirements", "zh": "Tessera 為所在的伺服器提供斷電時的竄改偵測功能。伺服器機殼的實體竄改偵測，是由連接到 Tessera 的機殼入侵感測器執行。", "en": "Tessera provides power-off tamper detection functionality to the server in which it is housed. The physical tamper detection of the server chassis is performed using intrusion sensors on the chassis connected to Tessera."}], "tamper": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Physical Security", "zh": "Tessera 存放明文金鑰的密碼加速區塊、記憶體與緩衝區，必須具備下列防竄改機制：1. 防竄改 shield 2. 溫度感測器 3. 記憶體保護設定採用具 parity 保護的多暫存器與多位元暫存器。4. 安全敏感的暫存器必須是多位元的。例如：不應該用單一位元表示 debug 已啟用。5. 頻率與電壓監控", "en": "Tessera’s cryptographic acceleration blocks, memories, and buffers storing keys in plain text SHALL have the following tamper defense mechanisms: 1. Tamper Shield 2. Temperature Sensor 3. Multi Register and Multi bit Registers with parity protection on memory protection configuration. 4. Security sensitive registers shall be multi-bit. Example: a single bit should not represent debug enabled. 5. Frequency and Voltage monitors"}], "io": [{"src": "tessera-specs/Tessera - Chip Requirements Specification.md · Hardware Interfaces", "zh": "Tessera 的主要介面是 PCIe，其晶片需求已在前面章節說明。PCIe 介接架構的大部分在韌體中，因此不在此列出。以下只描述先前未涵蓋、會影響硬體的需求。", "en": "The primary interface to Tessera is over PCIe which has been addressed from a silicon requirement point of view in prior sections. Much of the architecture for interfacing over PCIe is in firmware and therefore not called out here. Only HW impacting requirements not previously covered are described below."}]}, "ST": {"Key Mover": [{"src": "tessera-sw/fw/core/crypto/key-masking/src/lib.rs", "zh": "cbc：v1，AES-CBC-256 + HMAC-SHA-384（encrypt-then-MAC）。", "en": "[`cbc`] — **v1**, AES-CBC-256 + HMAC-SHA-384 (encrypt-then-MAC)."}, {"src": "tessera-sw/fw/core/crypto/key-masking/src/lib.rs", "zh": "aead：v2，AEAD envelope（目前為 AES-256-GCM）。", "en": "[`aead`] — **v2**, AEAD envelope (today AES-256-GCM)"}], "RSA": [{"src": "tessera-rtl/src/rsa_4k_3k_2k/rtl/tessera_rsa_ctrl.sv", "zh": "DP/DQ 不像 D 有 blinding 的餘裕。拒絕同時使用 CRT 與 blinding：截斷 dp+k*(p-1) 可能產生錯誤簽章而洩漏因數。", "en": "DP/DQ have no blinding headroom, unlike D.  Reject CRT with blinding: truncating dp+k*(p-1) could produce a faulted signature that exposes factors."}], "ECC": [{"src": "tessera-rtl/src/ecc_ecdsa_ecdhe/rtl/tessera_ecc_params_pkg.sv", "zh": "ECC Secp384r1 所需的參數與暫存器位址。", "en": "required parameters and register address for ECC Secp384r1."}], "RNG": [{"src": "tessera-rtl/src/hmac_drbg/rtl/tessera_hmac_drbg.sv", "zh": "HMAC384-drbg 頂層 wrapper，384 位元資料存取。", "en": "HMAC384-drbg top-level wrapper with 384 bit data access."}], "控制核心叢集": [{"r": "BASE-10"}, {"r": "CPU-3"}]}};
+function aitem(q){
+  if(q.note) return '<p style="color:var(--muted);font-style:italic;margin:4px 0">'+esc(q.note)+'</p>';
+  if(q.r){var r=BY[q.r];return '<div class="aq"><div class="aqs">CRD <b>'+q.r+'</b> · '+esc(r[6])+'（'+esc(r[1])+'）</div>'+zhen(r[7],r[2])+'</div>';}
+  return '<div class="aq"><div class="aqs">'+esc(q.src)+'</div>'+zhen(q.zh,q.en.replace(/\*\*/g,'').replace(/`/g,''))+'</div>';
+}
 function rid(id){return '<span class="rid" data-id="'+id+'">'+id+'</span>';}
 function expand(spec){ // "KEY-OFF-1..11" -> list
   var out=[];spec.split(',').forEach(function(p){p=p.trim();var m=p.match(/^(.*-)(\d+)\.\.(\d+)(-INFORMATIVE)?$/);
     if(m){for(var i=+m[2];i<=+m[3];i++){var id=m[1]+i;if(BY[id])out.push(id);else if(BY[id+'-INFORMATIVE'])out.push(id+'-INFORMATIVE');}}else if(BY[p])out.push(p);
     else{Object.keys(BY).forEach(function(k){if(p.slice(-1)==='*'&&k.indexOf(p.slice(0,-1))===0)out.push(k);});}});
   return out;}
-var STL={open:'RTL 已開源',partial:'部分 / 有缺口',missing:'RTL 未公開',ext:'外部 IP'};
+var STL={open:'RTL 已開源',partial:'部分',missing:'RTL 未公開',ext:'外部 IP'};
 var SC={open:'var(--st-open)',partial:'var(--st-partial)',missing:'var(--st-missing)',ext:'var(--st-ext)'};
 
 /* ---------- blocks ---------- */
 var B=[
- {id:'pcie',z:'main',c:'1/5',t:'PCIe Gen6 端點',s:'IDE · TDISP · DOE · SR-IOV',st:'missing',req:'BASE-1..3,BASE-14..37,SEC-PCIE-1..8,CRYPT-IDE-1..2',
-  n:'IDE 的 AES-256-GCM 引擎必須和租戶用的加密引擎實體分開；IDE 金鑰只能由終結 SPDM 的安全處理器直接下放給 PCIe 控制器。'},
- {id:'fetch',z:'main',c:'5/9',t:'指令擷取與佇列',s:'NVMe 2.0 風格 · 1536+8 SQ/CQ · WRR',st:'missing',req:'BASE-4..9,BASE-16..17,QOS-1..5,QOS-HSM-1..3',
-  n:'所有 VF 共用擷取硬體，依加權輪替決定下一個 SQE；各 SQ 必須獨立處理，不能有 head-of-line blocking。'},
- {id:'gdma',z:'main',c:'9/13',t:'GDMA',s:'PRP / SGL 硬體解碼 · 優先權',st:'missing',req:'GDMA-1..2,BASE-5..6',
-  n:'PRP/SGL 解析由硬體做，不佔用 CPU；要有足夠的優先權等級，保證每個 PCIe 頻寬使用者（核心叢集、host memory hasher）的最低頻寬。tessera-sw 的 Uno 平台有 GDMA 驅動，但 RTL 未公開。'},
- {id:'cpu',z:'main',c:'1/5',t:'控制核心叢集',s:'≥ 4 核 · M7 / E6 等級 · 64 kB I$ + D$',st:'ext',req:'BASE-10,CPU-1..5',
-  n:'CPU-2：每顆核心至少達到 ARM M7 或 RISC-V E6 等級。BASE-10 寫「at least 900MHz」，CPU-3 寫「at least 1GHz」。'},
- {id:'seq',z:'main',c:'5/9',t:'Sequencers',s:'OAEP、KDF 等多步驟運算',st:'missing',req:'CRYPT-GEN-3,POOL-4',
-  n:'把需要多次呼叫基本運算的流程（例如 RSA-OAEP 的 MGF）從控制核心卸載。CRYPT-GEN-3 希望每個租戶運算的韌體互動次數少於 10 次。'},
- {id:'km',z:'main',c:'9/13',t:'Key Mover',s:'AES-GCM-256 · 每秒驗證 40 萬把 key',st:'missing',req:'KEY-OFF-1..11,CRYPT-KM-1..4,CRYPT-GCM-1..5-INFORMATIVE,KEY-MGT-6',
-  n:'CRD：key mover 用只存在 Tessera 內、每個 session 唯一的 ephemeral key 把金鑰封裝後交回 VM，使用時再驗證並解開；清除 session key 會讓所有以它封裝的金鑰永久無法解讀。'},
- {id:'gsram',z:'main',c:'1/9',t:'GSRAM ≥ 8 MB ⊃ Key Vault ≥ 4 MB',s:'SECDED · ≥ 16 個由 SP 設定的 aperture',st:'missing',req:'MEM-1..6,BASE-11..13,KEY-1..4,KEY-PIN-1..2,KEY-MGT-7',
-  n:'核心叢集的程式、資料與 key vault 共用一塊 GSRAM。Aperture 由安全處理器在開機時設定、執行期可被證明；Key Vault 區只允許指定的硬體或核心讀寫。Pinned 模式要支援 512 個租戶各 8 kB。'},
- {id:'hmh',z:'main',c:'9/13',t:'Host Memory Hasher',s:'SHA2/3 · ≥ 3.2 GB/s · ≥ 32 個並行指令',st:'missing',req:'CRYPT-HMH-1..9-INFORMATIVE',
-  n:'直接對主機記憶體做雜湊，支援大文件簽章（含 ML-DSA external-mu）。每個指令最多處理 4 kB 就要輪替，避免單一 VM 佔住引擎。'},
- {id:'pm',z:'pool',c:'1/13',t:'Pool Managers',s:'接收指令、分派加速器、完整完成一個運算',st:'missing',req:'POOL-1..5-INFORMATIVE,CRYPT-1..3,CRYPT-GEN-1..5',
-  n:'所有密碼運算都要在硬體加速器執行（CRYPT-1）；控制核心透過 pool manager 提交，不需要指定實體加速器，pool 之間不得共用加速器。'},
- {id:'rsa',z:'pool',c:'1/4',t:'RSA',s:'2048 / 3072 / 4096 · CRT',st:'partial',req:'CRYPT-RSA-1..7,PERF-1..6,PERF-18..20',
-  n:'tessera-rtl 的 RSA 引擎沒有 revinfo.yml。RTL 註解：含 CRT、Garner 重組與 Bellcore 驗證；CRT 與 exponent blinding 不能同時啟用；沒有 Key Vault 介面。'},
- {id:'ecc',z:'pool',c:'4/7',t:'ECC',s:'P-256 · P-256K · P-384 · P-521',st:'partial',req:'CRYPT-ECC-1..5,PERF-7..10,PERF-21..23',
-  n:'CRD 要求 P-256、P-256K、P-384、P-521。tessera-rtl 的 ECC 參數為 secp384r1（含 scalar blinding）。'},
- {id:'pqc',z:'pool',c:'7/10',t:'ML-DSA / ML-KEM',s:'44/65/87 · 512/768/1024',st:'open',req:'CRYPT-PQC-1..7,CRYPT-HYBRID-1,PERF-32..37',
-  n:'tessera-rtl 的 src/mldsa_mlkem_all_levels 來自 Caliptra 的 Adams Bridge。'},
- {id:'util',z:'pool',c:'10/13',t:'Utility Pool',s:'AES · SHA1/2/3 · HMAC · KDF · KW',st:'partial',req:'CRYPT-AES-1..9,CRYPT-HASH-1..11',
-  n:'CRD：utility pool 提供 SHA1、SHA2、SHA3 與 AES 各模式。tessera-rtl 中有 AES（ECB/CBC/CTR/CFB/OFB/GCM）、SHA-2、SHA-3/SHAKE、HMAC。'},
- {id:'rng',z:'main',c:'1/5',t:'RNG（租戶用）',s:'TRNG + DRBG · SP 800-90A/B/C',st:'partial',req:'CRYPT-RNG-1..3',
-  n:'CRD：租戶用的 RNG 與 Caliptra 內的 RNG 分開。tessera-rtl 中有 HMAC-DRBG（398 行）。'},
- {id:'cal',z:'sec',c:'5/9',t:'Caliptra 2.2 Subsystem',s:'唯一 RoT · secure / streaming boot · SPDM · DICE',st:'ext',req:'ROT-1..13,FW-SEC-3,FW-SVC-4',
-  n:'Caliptra 是唯一的 RoT，負責載入並量測所有韌體、獨占 DOE 處理 SPDM，量產時經由專用 I3C 以 OCP streaming boot 開機。它內建的密碼引擎只供 Caliptra 自己使用。'},
- {id:'puf',z:'sec',c:'9/11',t:'PUF',s:'裝置唯一熵與身分',st:'missing',req:'ROT-14,ROT-15',
-  n:'ROT-14、ROT-15 為 SHALL。tessera-rtl 與 tessera-sw 中沒有 PUF。'},
- {id:'fuse',z:'sec',c:'11/13',t:'Fuses',s:'UDS · Field Entropy',st:'ext',req:'ROT-5,ROT-5A,ROT-5B,MFG-KEY-1',
-  n:'Caliptra 的 UDS 與 Field Entropy；除役時必須能清零（ROT-5）。'},
- {id:'rtc',z:'aon',c:'1/5',t:'RTC 與入侵偵測',s:'CR2032 供電 · 2 年 · 時間戳',st:'missing',req:'CINTR-1..8-INFORMATIVE,HW-RTC-1..4,PWR-1',
-  n:'斷電時由 RTC 電源維持入侵偵測並記錄時間戳；復電後中斷安全處理器，由韌體第一個處理。'},
- {id:'tamper',z:'aon',c:'5/9',t:'物理防護',s:'Shield · 溫度 · 電壓 · 頻率 · 多位元暫存器',st:'missing',req:'PKG-3,PKG-4',
-  n:'CRD「Physical Security」要求存放明文金鑰的加速器、記憶體與緩衝區具備 tamper shield、溫度感測、有 parity 保護的多位元暫存器、頻率與電壓監控（此段為條列文字，沒有需求 ID）；封裝必須不透光、加蓋並具竄改證據（PKG-3/4）。'},
- {id:'io',z:'aon',c:'9/13',t:'周邊介面',s:'QSPI × 2 · I2C / I3C · USB2 · GPIO · 計時器 · Debug',st:'missing',req:'HW-QSPI-1..6,HW-I3C-1..9,HW-USB2-10..12,HW-GPIO-1..8,HW-WDT-1..4,HW-TMR-1..4,HW-MONO-1..4,HW-INT-1..4,HW-DBG-1..3',
-  n:'兩組 QSPI（一組給 Caliptra，一組給核心叢集，後者要支援 RPMC）、I3C 頻外管理、單調計數器、看門狗與 debug 介面。'}
+ {id:'pcie',z:'main',c:'1/5',t:'PCIe Gen6 端點',s:'IDE · TDISP · DOE · SR-IOV',st:'missing',req:'BASE-1..3,BASE-14..37,SEC-PCIE-1..8,CRYPT-IDE-1..2'},
+ {id:'fetch',z:'main',c:'5/9',t:'指令擷取與佇列',s:'NVMe 2.0 風格 · 1536+8 SQ/CQ · WRR',st:'missing',req:'BASE-4..9,BASE-16..17,QOS-1..5,QOS-HSM-1..3'},
+ {id:'gdma',z:'main',c:'9/13',t:'GDMA',s:'PRP / SGL 硬體解碼 · 優先權',st:'missing',req:'GDMA-1..2,BASE-5..6'},
+ {id:'cpu',z:'main',c:'1/5',t:'控制核心叢集',s:'≥ 4 核 · M7 / E6 等級 · 64 kB I$ + D$',st:'ext',req:'BASE-10,CPU-1..5'},
+ {id:'seq',z:'main',c:'5/9',t:'Sequencers',s:'OAEP、KDF 等多步驟運算',st:'missing',req:'CRYPT-GEN-3,POOL-4'},
+ {id:'km',z:'main',c:'9/13',t:'Key Mover',s:'AES-GCM-256 · 每秒驗證 40 萬把 key',st:'missing',req:'KEY-OFF-1..11,CRYPT-KM-1..4,CRYPT-GCM-1..5-INFORMATIVE,KEY-MGT-6'},
+ {id:'gsram',z:'main',c:'1/9',t:'GSRAM ≥ 8 MB ⊃ Key Vault ≥ 4 MB',s:'SECDED · ≥ 16 個由 SP 設定的 aperture',st:'missing',req:'MEM-1..6,BASE-11..13,KEY-1..4,KEY-PIN-1..2,KEY-MGT-7'},
+ {id:'hmh',z:'main',c:'9/13',t:'Host Memory Hasher',s:'SHA2/3 · ≥ 3.2 GB/s · ≥ 32 個並行指令',st:'missing',req:'CRYPT-HMH-1..9-INFORMATIVE'},
+ {id:'pm',z:'pool',c:'1/13',t:'Pool Managers',s:'接收指令、分派加速器、完整完成一個運算',st:'missing',req:'POOL-1..5-INFORMATIVE,CRYPT-1..3,CRYPT-GEN-1..5'},
+ {id:'rsa',z:'pool',c:'1/4',t:'RSA',s:'2048 / 3072 / 4096 · CRT',st:'partial',req:'CRYPT-RSA-1..7,PERF-1..6,PERF-18..20'},
+ {id:'ecc',z:'pool',c:'4/7',t:'ECC',s:'P-256 · P-256K · P-384 · P-521',st:'partial',req:'CRYPT-ECC-1..5,PERF-7..10,PERF-21..23'},
+ {id:'pqc',z:'pool',c:'7/10',t:'ML-DSA / ML-KEM',s:'44/65/87 · 512/768/1024',st:'open',req:'CRYPT-PQC-1..7,CRYPT-HYBRID-1,PERF-32..37'},
+ {id:'util',z:'pool',c:'10/13',t:'Utility Pool',s:'AES · SHA1/2/3 · HMAC · KDF · KW',st:'partial',req:'CRYPT-AES-1..9,CRYPT-HASH-1..11'},
+ {id:'rng',z:'main',c:'1/5',t:'RNG（租戶用）',s:'TRNG + DRBG · SP 800-90A/B/C',st:'partial',req:'CRYPT-RNG-1..3'},
+ {id:'cal',z:'sec',c:'5/9',t:'Caliptra 2.2 Subsystem',s:'唯一 RoT · secure / streaming boot · SPDM · DICE',st:'ext',req:'ROT-1..13,FW-SEC-3,FW-SVC-4'},
+ {id:'puf',z:'sec',c:'9/11',t:'PUF',s:'裝置唯一熵與身分',st:'missing',req:'ROT-14,ROT-15'},
+ {id:'fuse',z:'sec',c:'11/13',t:'Fuses',s:'UDS · Field Entropy',st:'ext',req:'ROT-5,ROT-5A,ROT-5B,MFG-KEY-1'},
+ {id:'rtc',z:'aon',c:'1/5',t:'RTC 與入侵偵測',s:'CR2032 供電 · 2 年 · 時間戳',st:'missing',req:'CINTR-1..8-INFORMATIVE,HW-RTC-1..4,PWR-1'},
+ {id:'tamper',z:'aon',c:'5/9',t:'物理防護',s:'Shield · 溫度 · 電壓 · 頻率 · 多位元暫存器',st:'missing',req:'PKG-3,PKG-4'},
+ {id:'io',z:'aon',c:'9/13',t:'周邊介面',s:'QSPI × 2 · I2C / I3C · USB2 · GPIO · 計時器 · Debug',st:'missing',req:'HW-QSPI-1..6,HW-I3C-1..9,HW-USB2-10..12,HW-GPIO-1..8,HW-WDT-1..4,HW-TMR-1..4,HW-MONO-1..4,HW-INT-1..4,HW-DBG-1..3'}
 ];
 var chip=document.getElementById('chip');
 function zoneEl(cls,label,col){var z=document.createElement('div');z.className='zone '+cls;z.style.gridColumn=col;z.innerHTML='<span class="zl">'+label+'</span>';z.style.gridTemplateColumns='repeat(12,1fr)';return z;}
@@ -297,7 +286,7 @@ function selectBlk(id){
   Object.keys(blkEls).forEach(function(k){blkEls[k].classList.toggle('sel',k===id);});
   var b=B.filter(function(x){return x.id===id;})[0],ids=expand(b.req);
   document.getElementById('blkDetail').innerHTML='<h3 style="margin:0 0 4px">'+b.t+' <span class="st '+b.st+'">'+STL[b.st]+'</span></h3>'+
-    '<div style="color:var(--muted);font-size:13.5px;margin-bottom:6px">'+b.s+'</div><p style="margin:4px 0 10px">'+b.n+'</p>'+
+    '<div style="color:var(--muted);font-size:13.5px;margin-bottom:6px">'+b.s+'</div>'+(AQ.BLK[b.id]||[]).map(aitem).join('')+
     '<div style="font-size:12.5px;color:var(--muted);margin-bottom:4px">相關需求（'+ids.length+' 項，中文翻譯，下附 CRD 原文）</div>'+
     ids.map(function(i){var r=BY[i];return '<div class="req-mini"><b>'+rid(i)+'</b><span class="nm">'+esc(r[6])+'</span>（'+esc(r[1])+'）'+zhen(r[7],r[2])+'</div>';}).join('');
 }
@@ -325,18 +314,18 @@ document.getElementById('otherRates').innerHTML=['CRYPT-KM-1','CRYPT-HMH-2','CRY
 var ST=[
  ['PCIe 端點 · IDE · TDISP','SEC-PCIE-1..8, CRYPT-IDE-1..2','無','missing','—'],
  ['指令擷取 · 佇列 · QoS','BASE-4..9, QOS-1..5','tessera-sw：Uno 平台有 IIC/OIC 驅動；RTL 無','missing','—'],
- ['控制核心叢集','CPU-1..5, BASE-10','外購核心；tessera-sw Uno 平台為 Cortex-M','ext','BASE-10：at least 900MHz；CPU-3：at least 1GHz'],
+ ['控制核心叢集','CPU-1..5, BASE-10','外購核心；tessera-sw Uno 平台為 Cortex-M','ext','—'],
  ['GSRAM · Key Vault · apertures','MEM-1..6, KEY-1..4, KEY-PIN-1..2','tessera-sw：vault 驅動與 key_vault crate；RTL 無','missing','—'],
- ['Key Mover','CRYPT-KM-1..4, KEY-OFF-7','無','missing','tessera-sw key-masking crate 文件：v1 為 AES-CBC-256 + HMAC-SHA-384，v2 為 AES-256-GCM'],
+ ['Key Mover','CRYPT-KM-1..4, KEY-OFF-7','無','missing','—'],
  ['Pool Manager · Sequencer','POOL-1..5, CRYPT-GEN-3','無','missing','—'],
- ['RSA','CRYPT-RSA-1..7','src/rsa_4k_3k_2k','partial','沒有 revinfo.yml；RTL 註解：CRT 與 blinding 不能同時啟用、預設皆為 0、沒有 Key Vault 介面'],
- ['ECC','CRYPT-ECC-1..5','src/ecc_ecdsa_ecdhe','partial','RTL 參數：secp384r1'],
+ ['RSA','CRYPT-RSA-1..7','src/rsa_4k_3k_2k','partial','—'],
+ ['ECC','CRYPT-ECC-1..5','src/ecc_ecdsa_ecdhe','partial','—'],
  ['ML-DSA / ML-KEM','CRYPT-PQC-1..7','src/mldsa_mlkem_all_levels','open','—'],
- ['AES','CRYPT-AES-1..9','src/aes_all_modes','partial','RTL 模式：ECB/CBC/CTR/CFB/OFB/GCM'],
- ['SHA-1 / SHA-2 / SHA-3','CRYPT-HASH-1..4','src/sha2_*、src/sha3_shake_all_modes','partial','RTL：SHA-2、SHA-3、SHAKE'],
- ['HMAC · KDF','CRYPT-HASH-5..7','src/hmac_256、src/hmac_512_384','partial','RTL：HMAC'],
+ ['AES','CRYPT-AES-1..9','src/aes_all_modes','partial','—'],
+ ['SHA-1 / SHA-2 / SHA-3','CRYPT-HASH-1..4','src/sha2_*、src/sha3_shake_all_modes','partial','—'],
+ ['HMAC · KDF','CRYPT-HASH-5..7','src/hmac_256、src/hmac_512_384','partial','—'],
  ['Host Memory Hasher','CRYPT-HMH-1..9','無','missing','—'],
- ['RNG','CRYPT-RNG-1..3','src/hmac_drbg','partial','RTL：HMAC-DRBG'],
+ ['RNG','CRYPT-RNG-1..3','src/hmac_drbg','partial','—'],
  ['Caliptra 2.2','ROT-1..13','外部（chipsalliance）','ext','—'],
  ['PUF','ROT-14..15','無','missing','—'],
  ['RTC · 入侵 · 物理防護','CINTR-1..6, PKG-3..4','無','missing','—'],
@@ -344,7 +333,7 @@ var ST=[
 ];
 var stb=document.querySelector('#statusTable tbody');
 ST.forEach(function(s){var ids=[];s[1].split(',').forEach(function(p){ids=ids.concat(expand(p.trim()));});
-  var tr=document.createElement('tr');tr.innerHTML='<td><b>'+s[0]+'</b></td><td style="min-width:160px">'+s[1].split(',').map(function(p){p=p.trim();var e=expand(p);return e.length?'<span class="rid" data-id="'+e[0]+'">'+p+'</span>':p;}).join(' ')+'</td><td style="font-size:13px">'+esc(s[2])+'</td><td><span class="st '+s[3]+'">'+STL[s[3]]+'</span></td><td style="font-size:13px">'+esc(s[4])+'</td>';stb.appendChild(tr);});
+  var tr=document.createElement('tr');tr.innerHTML='<td><b>'+s[0]+'</b></td><td style="min-width:160px">'+s[1].split(',').map(function(p){p=p.trim();var e=expand(p);return e.length?'<span class="rid" data-id="'+e[0]+'">'+p+'</span>':p;}).join(' ')+'</td><td style="font-size:13px">'+esc(s[2])+'</td><td><span class="st '+s[3]+'">'+STL[s[3]]+'</span></td><td style="font-size:13px;min-width:260px">'+(AQ.ST[s[0]]?AQ.ST[s[0]].map(aitem).join(''):'—')+'</td>';stb.appendChild(tr);});
 
 /* ---------- explorer ---------- */
 var fCh=document.getElementById('fCh'),fOb=document.getElementById('fOb'),q=document.getElementById('q'),tb=document.querySelector('#reqTable tbody');
@@ -361,6 +350,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('.rid');if(
   q.value='';fCh.value='';fOb.value='';filt();var tr=document.getElementById('req-'+id);if(!tr)return;
   rows.forEach(function(x){x.tr.classList.remove('hl');});tr.classList.add('hl');
   document.getElementById('reqs').scrollIntoView();setTimeout(function(){tr.scrollIntoView({block:'center'});},350);});
+document.getElementById('heroQ').innerHTML=AQ.HERO.map(aitem).join('');
 selectBlk('km');
 </script>
 </body>
