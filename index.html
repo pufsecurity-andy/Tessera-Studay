@@ -37,9 +37,10 @@ h1{font-size:32px;margin:34px 0 8px;line-height:1.25}
 .date{font-size:12px;color:var(--muted);margin-top:10px}
 .deck h2{font-size:22px;margin:0 0 10px}
 .fold{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:16px 0 0}
-.fold>summary{list-style:none;cursor:pointer;padding:14px 18px 14px 46px;position:relative;border-radius:12px}
+.fold>summary{list-style:none;cursor:pointer;padding:14px 18px;border-radius:12px;display:grid;grid-template-columns:24px 1fr;column-gap:12px;align-items:center}
 .fold>summary::-webkit-details-marker{display:none}
-.fold>summary::before{content:"+";position:absolute;left:16px;top:13px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;line-height:20px;text-align:center;font-size:15px}
+.fold>summary::before{content:"+";grid-row:1 / 3;grid-column:1;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;padding-bottom:1px}
+.fold>summary .ft,.fold>summary .fd{grid-column:2}
 .fold[open]>summary::before{content:"−"}
 .fold>summary:hover{background:var(--panel2)}
 .fold .ft{display:block;font-size:18px;font-weight:700}
